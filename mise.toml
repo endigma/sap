@@ -3,6 +3,7 @@ buf = "latest"
 go = "latest"
 "go:golang.org/x/tools/cmd/deadcode" = "latest"
 golangci-lint = "latest"
+goreleaser = "latest"
 protoc = "latest"
 protoc-gen-go = "latest"
 

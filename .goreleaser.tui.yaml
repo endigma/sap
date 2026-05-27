@@ -1,0 +1,13 @@
+version: 2
+
+project_name: sap-viewer-tui
+
+dist: dist/tui
+
+builds:
+  - id: sap-viewer-tui
+    dir: viewer/tui
+    main: .
+    binary: sap-viewer-tui
+    env:
+      - CGO_ENABLED=0
