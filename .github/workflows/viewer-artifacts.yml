@@ -37,11 +37,11 @@ jobs:
             goarch: arm64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: stable
 
@@ -85,7 +85,7 @@ jobs:
           tar -C "dist/${artifact}" -czf "dist/${artifact}.tar.gz" "${BINARY}${ext}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.BINARY }}-${{ env.VERSION }}-${{ matrix.target.goos }}-${{ matrix.target.goarch }}
           path: dist/*.tar.gz
@@ -96,7 +96,7 @@ jobs:
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
@@ -110,4 +110,4 @@ jobs:
       - name: Upload release assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$RELEASE_TAG" dist/*.tar.gz dist/*_checksums.txt --clobber
+        run: gh release upload "$RELEASE_TAG" dist/*.tar.gz dist/*_checksums.txt --repo "$GITHUB_REPOSITORY" --clobber
