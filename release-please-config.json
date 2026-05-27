@@ -36,13 +36,13 @@
       "component": "viewer/tui",
       "include-component-in-tag": true,
       "tag-separator": "/",
-      "changelog-path": "viewer/tui/CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md"
     },
     "viewer/web": {
       "component": "viewer/web",
       "include-component-in-tag": true,
       "tag-separator": "/",
-      "changelog-path": "viewer/web/CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md"
     }
   }
 }
