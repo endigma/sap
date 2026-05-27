@@ -1,0 +1,62 @@
+edition = "2024";
+
+package sap.v1;
+
+option go_package = "github.com/endigma/sap/gen/sap/v1;sapv1";
+
+import "google/protobuf/timestamp.proto";
+
+message Record {
+  google.protobuf.Timestamp emitted_at = 1;
+
+  oneof kind {
+    SpanStarted span_started = 2;
+    SpanUpdated span_updated = 3;
+    SpanEnded span_ended = 4;
+    SpanEvent span_event = 5;
+  }
+}
+
+message Attribute {
+  string key = 1;
+  string label = 2;
+  string value = 3;
+  repeated string display_hints = 4;
+}
+
+message SpanStarted {
+  string trace_id = 1;
+  string span_id = 2;
+  string parent_span_id = 3;
+  string name = 4;
+  google.protobuf.Timestamp started_at = 5;
+  repeated Attribute attributes = 6;
+}
+
+message SpanUpdated {
+  string trace_id = 1;
+  string span_id = 2;
+  repeated Attribute attributes = 3;
+}
+
+message SpanEnded {
+  enum TerminalType {
+    TERMINAL_TYPE_UNSPECIFIED = 0;
+    TERMINAL_TYPE_COMPLETE = 1;
+    TERMINAL_TYPE_ERROR = 2;
+  }
+
+  string trace_id = 1;
+  string span_id = 2;
+  google.protobuf.Timestamp ended_at = 3;
+  TerminalType terminal_type = 4;
+  string error_message = 5;
+}
+
+message SpanEvent {
+  string trace_id = 1;
+  string span_id = 2;
+  string name = 3;
+  google.protobuf.Timestamp event_at = 4;
+  repeated Attribute attributes = 5;
+}

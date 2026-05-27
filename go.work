@@ -1,0 +1,9 @@
+go 1.26.3
+
+use (
+	.
+	./viewer/tui
+	./viewer/web
+)
+
+replace github.com/endigma/sap v0.0.0 => .

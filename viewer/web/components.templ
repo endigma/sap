@@ -1,0 +1,673 @@
+package main
+
+import (
+	"fmt"
+	"time"
+
+	templcss "github.com/a-h/templ"
+	sapv1 "github.com/endigma/sap/gen/sap/v1"
+	"github.com/endigma/sap/state"
+	"github.com/endigma/sap/transport/sse"
+)
+
+css appRoot() {
+	color-scheme: dark;
+	--bg: #09090b;
+	--panel: #0f0f10;
+	--panel-subtle: #18181b;
+	--text: #fafafa;
+	--muted: #a1a1aa;
+	--line: #27272a;
+	--accent: #fafafa;
+	--accent-subtle: #18181b;
+	--ok: #22c55e;
+	--warn: #eab308;
+	--err: #ef4444;
+	--code: #030303;
+	box-sizing: border-box;
+	margin: 0;
+	background: { templcss.SafeCSSProperty("linear-gradient(to right, rgb(39 39 42 / 45%) 1px, transparent 1px), linear-gradient(to bottom, rgb(39 39 42 / 45%) 1px, transparent 1px), var(--bg)") };
+	background-size: 48px 48px;
+	color: var(--text);
+	font: { templcss.SafeCSSProperty("14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif") };
+	font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+css topBar() {
+	box-sizing: border-box;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	align-items: center;
+	padding: .75rem 1rem;
+	border-bottom: 1px solid var(--line);
+	background: rgb(9 9 11 / 88%);
+	backdrop-filter: blur(12px);
+}
+
+css brandTitle() {
+	margin: 0;
+	font-size: .875rem;
+	font-weight: 600;
+	letter-spacing: -.01em;
+}
+
+css toolbarLabel() {
+	display: inline-flex;
+	align-items: center;
+	gap: .45rem;
+	color: var(--muted);
+	font-size: .8125rem;
+}
+
+css pageMain() {
+	box-sizing: border-box;
+	padding: 1rem;
+	padding-bottom: 5.5rem;
+	max-width: 1180px;
+	margin: 0 auto;
+}
+
+css footerDock() {
+	box-sizing: border-box;
+	position: fixed;
+	z-index: 20;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-top: 1px solid var(--line);
+	background: rgb(9 9 11 / 92%);
+	backdrop-filter: blur(12px);
+}
+
+css statusBar() {
+	box-sizing: border-box;
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: .625rem 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: .75rem;
+	flex-wrap: wrap;
+}
+
+css statusGroup() {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	flex-wrap: wrap;
+}
+
+css pill() {
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	gap: .35rem;
+	border: 1px solid var(--line);
+	padding: .25rem .5rem;
+	background: var(--panel);
+	color: var(--muted);
+	font-size: .8125rem;
+	white-space: nowrap;
+}
+
+css dot() {
+	width: .5rem;
+	height: .5rem;
+	border-radius: 999px;
+	background: var(--muted);
+	display: inline-block;
+}
+
+css dotConnected() {
+	background: var(--ok);
+}
+
+css dotConnecting() {
+	background: var(--warn);
+	animation: pulse 900ms infinite alternate;
+}
+
+css dotRetrying() {
+	background: var(--warn);
+	animation: pulse 900ms infinite alternate;
+}
+
+css dotDisconnected() {
+	background: var(--muted);
+}
+
+css buttonBase() {
+	box-sizing: border-box;
+	color: var(--text);
+	background: var(--panel);
+	border: 1px solid var(--line);
+	padding: .375rem .625rem;
+	font: inherit;
+	font-size: .8125rem;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+css dangerButton() {
+	color: #fca5a5;
+	border-color: rgb(239 68 68 / 38%);
+	background: rgb(127 29 29 / 18%);
+}
+
+css emptyState() {
+	box-sizing: border-box;
+	display: grid;
+	place-items: center;
+	min-height: 55vh;
+	color: var(--muted);
+	border: 1px dashed #3f3f46;
+	background: rgb(15 15 16 / 72%);
+	text-align: center;
+	padding: 2rem;
+}
+
+css emptyTitle() {
+	color: var(--text);
+	font-weight: 600;
+}
+
+css traceList() {
+	display: flex;
+	flex-direction: column;
+	gap: .75rem;
+}
+
+css spanCard() {
+	box-sizing: border-box;
+	--span-hue: 260;
+	border: 1px solid var(--line);
+	border-left: 3px solid hsl(var(--span-hue) 56% 62% / 78%);
+	background: rgb(15 15 16 / 88%);
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgb(0 0 0 / 32%);
+}
+
+
+
+css spanChildren() {
+	box-sizing: border-box;
+	padding: 0 .75rem .75rem 1rem;
+}
+
+css spanHeader() {
+	box-sizing: border-box;
+	display: flex;
+	justify-content: space-between;
+	align-items: start;
+	gap: .75rem;
+	padding: .75rem .875rem;
+}
+
+css spanTitle() {
+	min-width: 0;
+}
+
+css spanName() {
+	font-weight: 600;
+	letter-spacing: -.01em;
+	color: var(--text);
+	word-break: break-word;
+}
+
+css spanMeta() {
+	display: flex;
+	gap: .45rem;
+	flex-wrap: wrap;
+	margin-top: .2rem;
+	color: var(--muted);
+	font-size: .75rem;
+}
+
+css spanState() {
+	display: inline-flex;
+	align-items: center;
+	gap: .4rem;
+	color: var(--muted);
+	white-space: nowrap;
+	font-size: .8125rem;
+}
+
+css statusOK() {
+	color: var(--ok);
+}
+
+css statusError() {
+	color: var(--err);
+}
+
+css spinner() {
+	width: .625rem;
+	height: .625rem;
+	border: 1.5px solid var(--warn);
+	border-right-color: transparent;
+	border-radius: 999px;
+	animation: spin 700ms linear infinite;
+}
+
+css sectionBlock() {
+	box-sizing: border-box;
+	border-top: 1px solid var(--line);
+	padding: .75rem .875rem;
+}
+
+css sectionTitle() {
+	color: var(--muted);
+	font-size: .6875rem;
+	font-weight: 600;
+	letter-spacing: .08em;
+	text-transform: uppercase;
+	margin-bottom: .5rem;
+}
+
+css attrsGrid() {
+	display: grid;
+	gap: .5rem;
+}
+
+css attrRow() {
+	display: grid;
+	grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+	gap: .75rem;
+	align-items: start;
+}
+
+css attrLabelClass() {
+	color: var(--muted);
+	font-weight: 500;
+	font-size: .8125rem;
+}
+
+css attrValueClass() {
+	color: var(--text);
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+css badge() {
+	display: inline-flex;
+	width: fit-content;
+	border: 1px solid var(--line);
+	padding: .125rem .375rem;
+	background: var(--accent-subtle);
+	color: var(--text);
+	font-size: .75rem;
+	font-weight: 500;
+}
+
+css codeBlock() {
+	box-sizing: border-box;
+	margin: .15rem 0 0;
+	overflow: auto;
+	border: 1px solid var(--line);
+	background: var(--code);
+	padding: .75rem;
+}
+
+css codeText() {
+	font: { templcss.SafeCSSProperty("12px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace") };
+	color: #fafafa;
+}
+
+css timelineList() {
+	display: grid;
+	gap: .75rem;
+}
+
+css timelineItemClass() {
+	min-width: 0;
+}
+
+css eventCardClass() {
+	box-sizing: border-box;
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--muted);
+	background: rgb(24 24 27 / 52%);
+	padding: .625rem .75rem;
+}
+
+css eventHeaderClass() {
+	display: flex;
+	justify-content: space-between;
+	gap: .7rem;
+	color: var(--text);
+	font-weight: 500;
+}
+
+css eventOffsetClass() {
+	color: var(--muted);
+	white-space: nowrap;
+	font-size: .75rem;
+	font-weight: 400;
+}
+
+css errorMessage() {
+	color: #fca5a5;
+	background: rgb(127 29 29 / 18%);
+	border: 1px solid rgb(239 68 68 / 28%);
+	padding: .5rem .625rem;
+}
+
+templ Page(snap snapshot) {
+	<!doctype html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>sap · web viewer</title>
+			<link rel="stylesheet" href="https://rsms.me/inter/inter.css"/>
+			<link rel="stylesheet" href="/styles/templ.css"/>
+			<script src="https://unpkg.com/htmx.org@2.0.10/dist/htmx.min.js"></script>
+			<script src="https://unpkg.com/idiomorph@0.7.4/dist/idiomorph-ext.min.js"></script>
+			<script src="https://unpkg.com/htmx-ext-sse@2.2.4/sse.js"></script>
+			<script>
+				document.addEventListener("alpine:init", () => {
+					Alpine.data("sapViewer", () => ({
+						autoscroll: true,
+						init() {
+							this.syncAutoscroll();
+							window.addEventListener("scroll", () => this.syncAutoscroll(), { passive: true });
+						},
+						isAtBottom() {
+							const doc = document.documentElement;
+							return window.innerHeight + window.scrollY >= doc.scrollHeight - 24;
+						},
+						syncAutoscroll() {
+							this.autoscroll = this.isAtBottom();
+						},
+						rootsSwap() {
+							return `morph:innerHTML${this.autoscroll ? " show:window:bottom" : ""}`;
+						},
+						patchSwap() {
+							return `innerHTML${this.autoscroll ? " show:window:bottom" : ""}`;
+						},
+					}));
+					Alpine.data("sapTimer", (start, end) => ({
+						label: "",
+						interval: null,
+						init() {
+							this.render();
+							if (!end) {
+								this.interval = setInterval(() => this.render(), 100);
+							}
+						},
+						destroy() {
+							if (this.interval) clearInterval(this.interval);
+						},
+						render() {
+							this.label = this.format(Math.max(0, (end || Date.now()) - start));
+						},
+						format(ms) {
+							if (ms < 1000) return `${Math.round(ms / 10) * 10}ms`;
+							if (ms < 60000) {
+								const value = Math.round(ms / 100) / 10;
+								return `${Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1)}s`;
+							}
+							const totalSeconds = Math.round(ms / 1000);
+							const minutes = Math.floor(totalSeconds / 60);
+							const seconds = totalSeconds % 60;
+							return seconds ? `${minutes}m${seconds}s` : `${minutes}m`;
+						},
+					}));
+				});
+			</script>
+			<script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+			<style>
+				@keyframes pulse { from { opacity: .45; } to { opacity: 1; } }
+				@keyframes spin { to { transform: rotate(360deg); } }
+				@keyframes item-in {
+					from { opacity: 0; transform: translateY(.25rem); }
+					to { opacity: 1; transform: translateY(0); }
+				}
+				.anim-enter { animation: item-in 180ms ease-out both; }
+				input[type="checkbox"] { accent-color: var(--accent); }
+				* { box-sizing: border-box; }
+				@media (prefers-reduced-motion: reduce) {
+					* { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+				}
+				@media (max-width: 720px) {
+					main { padding-inline: .5rem; }
+				}
+			</style>
+		</head>
+		<body
+			class={ appRoot() }
+			x-data="sapViewer"
+			hx-ext="sse,morph"
+			sse-connect="/stream"
+		>
+			<header class={ topBar() }>
+				<h1 class={ brandTitle() }>sap · live web viewer</h1>
+				<label class={ toolbarLabel() } title="Autoscroll turns off when you scroll up and turns back on at the bottom"><input type="checkbox" x-model="autoscroll"/> autoscroll</label>
+			</header>
+			<main id="roots" class={ pageMain() } sse-swap="roots" hx-swap="morph:innerHTML show:window:bottom" x-bind:hx-swap="rootsSwap()">@templ.Raw(snap.RootsHTML)</main>
+			<div id="patches" style="display:none" sse-swap="patch" hx-swap="innerHTML show:window:bottom" x-bind:hx-swap="patchSwap()"></div>
+			<footer id="status" class={ footerDock() } sse-swap="status" hx-swap="morph:innerHTML">@templ.Raw(snap.StatusHTML)</footer>
+		</body>
+	</html>
+}
+
+templ Roots(roots []*state.SpanState, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	if len(roots) == 0 {
+		<section class={ emptyState() }>
+			<div>
+				<strong class={ emptyTitle() }>Waiting for live records…</strong><br/>
+				<span>Connect an instrumented app to the configured SSE endpoint.</span>
+			</div>
+		</section>
+	} else {
+		<div class={ traceList() }>
+			for _, root := range roots {
+				@SpanCard(root, 0, now, staleOpenSpanIDs, false)
+			}
+		</div>
+	}
+}
+
+templ SpanPatch(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	@SpanCard(span, depth, now, staleOpenSpanIDs, true)
+}
+
+templ SpanSummaryPatch(span *state.SpanState, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	@SpanSummary(span, now, staleOpenSpanIDs, true)
+}
+
+templ SpanAttributesPatch(span *state.SpanState) {
+	@SpanAttributes(span, true)
+}
+
+templ SpanTimelinePatch(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	@SpanTimeline(span, depth, now, staleOpenSpanIDs, true)
+}
+
+templ TimelineAppendPatch(parent *state.SpanState, item timelineItem, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	<div hx-swap-oob={ "beforeend:#" + timelineListDOMID(parent) }>
+		@TimelineItem(item, parent, depth, now, staleOpenSpanIDs)
+	</div>
+}
+
+templ SpanCard(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time, oob bool) {
+	if span != nil {
+		if oob {
+			<article id={ spanDOMID(span) } hx-swap-oob="true" class={ spanCard() } data-card-key={ spanCardKey(span) } style={ spanStyle(span, depth) }>
+				@SpanCardContents(span, depth, now, staleOpenSpanIDs)
+			</article>
+		} else {
+			<article id={ spanDOMID(span) } class={ spanCard() } data-card-key={ spanCardKey(span) } style={ spanStyle(span, depth) }>
+				@SpanCardContents(span, depth, now, staleOpenSpanIDs)
+			</article>
+		}
+	}
+}
+
+templ SpanCardContents(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	@SpanSummary(span, now, staleOpenSpanIDs, false)
+	@SpanAttributes(span, false)
+	@SpanTimeline(span, depth, now, staleOpenSpanIDs, false)
+}
+
+templ SpanSummary(span *state.SpanState, now time.Time, staleOpenSpanIDs map[string]time.Time, oob bool) {
+	if oob {
+		<div id={ spanSummaryDOMID(span) } hx-swap-oob="outerHTML">
+			@SpanSummaryContents(span, now, staleOpenSpanIDs)
+		</div>
+	} else {
+		<div id={ spanSummaryDOMID(span) }>
+			@SpanSummaryContents(span, now, staleOpenSpanIDs)
+		</div>
+	}
+}
+
+templ SpanSummaryContents(span *state.SpanState, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	<div class={ spanHeader() }>
+		<div class={ spanTitle() }>
+			<div class={ spanName() }>{ span.Name }</div>
+			<div class={ spanMeta() }>
+				if hasTimer(span) {
+					<span data-timer x-data={ timerXData(span, staleOpenSpanIDs) } x-text="label">{ timingView(span, now, staleOpenSpanIDs) }</span>
+				}
+				if span.TraceID != "" {
+					<span title="trace id">trace { shortID(span.TraceID) }</span>
+				}
+				if span.SpanID != "" {
+					<span title="span id">span { shortID(span.SpanID) }</span>
+				}
+			</div>
+		</div>
+		<span class={ spanState(), statusToneClass(span, staleOpenSpanIDs) }>
+			if !span.Ended {
+				if statusText(span, staleOpenSpanIDs) == "running" {
+					<span class={ spinner() } aria-hidden="true"></span>
+				} else {
+					<span>{ statusIcon(span, staleOpenSpanIDs) }</span>
+				}
+			} else {
+				<span>{ statusIcon(span, staleOpenSpanIDs) }</span>
+			}
+			{ statusText(span, staleOpenSpanIDs) }
+		</span>
+	</div>
+	if span.ErrorMessage != "" {
+		<div class={ sectionBlock() }><div class={ errorMessage() }>{ span.ErrorMessage }</div></div>
+	}
+}
+
+templ SpanAttributes(span *state.SpanState, oob bool) {
+	if oob {
+		<div id={ spanAttributesDOMID(span) } hx-swap-oob="outerHTML">
+			@SpanAttributesContents(span)
+		</div>
+	} else {
+		<div id={ spanAttributesDOMID(span) }>
+			@SpanAttributesContents(span)
+		</div>
+	}
+}
+
+templ SpanAttributesContents(span *state.SpanState) {
+	if len(span.Attributes) > 0 {
+		<section class={ sectionBlock() }>
+			<div class={ sectionTitle() }>attributes</div>
+			@Attributes(spanCardKey(span), span.Attributes)
+		</section>
+	}
+}
+
+templ SpanTimeline(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time, oob bool) {
+	if oob {
+		<div id={ spanTimelineDOMID(span) } hx-swap-oob="outerHTML">
+			@SpanTimelineContents(span, depth, now, staleOpenSpanIDs)
+		</div>
+	} else {
+		<div id={ spanTimelineDOMID(span) }>
+			@SpanTimelineContents(span, depth, now, staleOpenSpanIDs)
+		</div>
+	}
+}
+
+templ SpanTimelineContents(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	if len(timelineItems(span)) > 0 {
+		<section class={ sectionBlock() }>
+			<div id={ timelineListDOMID(span) } class={ timelineList() }>
+				for _, item := range timelineItems(span) {
+					@TimelineItem(item, span, depth, now, staleOpenSpanIDs)
+				}
+			</div>
+		</section>
+	}
+}
+
+templ TimelineItem(item timelineItem, parent *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) {
+	<div class={ timelineItemClass(), "anim-enter" }>
+		if item.Kind == "span" {
+			@SpanCard(item.Span, depth+1, now, staleOpenSpanIDs, false)
+		} else {
+			@EventCard(item.Event, timelineOffset(parent, item), eventCardKey(parent, item))
+		}
+	</div>
+}
+
+templ Attributes(ownerKey string, attrs []*sapv1.Attribute) {
+	<div class={ attrsGrid() }>
+		for i, attr := range attrs {
+			if attr != nil {
+				<div id={ attrDOMID(ownerKey, attr, i) } class={ attrRow(), "anim-enter" }>
+					<div class={ attrLabelClass() }>{ attrLabel(attr) }</div>
+					<div class={ attrValueClass() }>
+						if attrIsCode(attr) {
+							<pre class={ codeBlock() }><code class={ codeText() }>@templ.Raw(highlightCodeHTML(codeLanguage(attr.GetDisplayHints()), attr.GetValue()))</code></pre>
+						} else if attrIsBadge(attr) {
+							<span class={ badge() }>{ attr.GetValue() }</span>
+						} else {
+							<span>{ attr.GetValue() }</span>
+						}
+					</div>
+				</div>
+			}
+		}
+	</div>
+}
+
+templ EventCard(event *state.EventState, offset string, key string) {
+	if event != nil {
+		<div id={ eventDOMID(key) } class={ eventCardClass() } data-card-key={ key }>
+			<div class={ eventHeaderClass() }>
+				<span>{ event.Name }</span>
+				if offset != "" {
+					<span class={ eventOffsetClass() }>{ offset }</span>
+				}
+			</div>
+			if len(event.Attributes) > 0 {
+				@Attributes(key, event.Attributes)
+			}
+		</div>
+	}
+}
+
+templ Status(roots int, conn sse.ConnectionState, paused bool) {
+	<div class={ statusBar() }>
+		<div class={ statusGroup() }>
+			<span class={ pill() }><span class={ dot(), connectionDotClass(conn) }></span>{ connectionLabel(conn) }</span>
+			if connectionDetail(conn) != "" {
+				<span class={ pill() }>{ connectionDetail(conn) }</span>
+			}
+			<span class={ pill() }>roots { fmt.Sprintf("%d", roots) }</span>
+			if paused {
+				<span class={ pill() }>paused</span>
+			}
+		</div>
+		<div class={ statusGroup() }>
+			<button class={ buttonBase() } type="button" hx-post="/pause" hx-target="#status" hx-swap="innerHTML">{ pauseButtonLabel(paused) }</button>
+			<button class={ buttonBase(), dangerButton() } type="button" hx-post="/clear" hx-target="#status" hx-swap="innerHTML" hx-confirm="Clear all spans from the viewer?">Clear</button>
+		</div>
+	</div>
+}

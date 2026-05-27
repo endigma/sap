@@ -1,0 +1,9 @@
+[tools]
+"aqua:a-h/templ" = "latest"
+go = "latest"
+
+[tasks.templ]
+run = "templ generate ."
+
+[tasks.web]
+run = "templ generate --watch --proxy=\"http://localhost:8090\" --cmd=\"go run .\""
