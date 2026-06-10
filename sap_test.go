@@ -337,7 +337,8 @@ func TestAddEvent(t *testing.T) {
 
 	t.Run("accumulates attributes across options and skips nil options", func(t *testing.T) {
 		span, records := newSpan(t)
-		span.AddEvent("event",
+		span.AddEvent(
+			"event",
 			WithAttributes(String("first", "1")),
 			nil,
 			WithAttributes(String("second", "2"), String("third", "3")),

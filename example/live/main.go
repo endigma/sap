@@ -71,7 +71,8 @@ func emitAppendTrace(ctx context.Context, hub *sap.Hub) {
 		spanDuration = time.Second
 	)
 
-	rootCtx, root := hub.Start(ctx, "append cadence demo",
+	rootCtx, root := hub.Start(
+		ctx, "append cadence demo",
 		sap.String("mode", "append", "badge"),
 		sap.Int("span_count", spanCount, "badge"),
 		sap.Duration("span_duration", spanDuration, "badge"),
@@ -81,7 +82,8 @@ func emitAppendTrace(ctx context.Context, hub *sap.Hub) {
 
 	root.AddEvent("demo.started", sap.WithAttributes(sap.String("note", "each appended child span remains open for one second", "text")))
 	for i := 1; i <= spanCount; i++ {
-		_, span := hub.Start(rootCtx, fmt.Sprintf("appended span %02d", i),
+		_, span := hub.Start(
+			rootCtx, fmt.Sprintf("appended span %02d", i),
 			sap.Int("index", i, "badge"),
 			sap.Duration("duration", spanDuration, "badge"),
 		)
@@ -107,7 +109,8 @@ func emitNestedTrace(hub *sap.Hub) {
 		fanout   = 2
 	)
 
-	ctx, root := hub.Start(context.Background(), "nested span stress demo",
+	ctx, root := hub.Start(
+		context.Background(), "nested span stress demo",
 		sap.Int("depth", maxDepth, "badge"),
 		sap.Int("fanout", fanout, "badge"),
 		sap.String("shape", "intentionally noisy recursive demo", "text"),
@@ -127,7 +130,8 @@ func emitNestedChildren(ctx context.Context, hub *sap.Hub, level, maxDepth, fano
 
 	for i := range fanout {
 		childPath := fmt.Sprintf("%s.%d", path, i+1)
-		childCtx, span := hub.Start(ctx, fmt.Sprintf("nested level %d child %d", level, i+1),
+		childCtx, span := hub.Start(
+			ctx, fmt.Sprintf("nested level %d child %d", level, i+1),
 			sap.Int("level", level, "badge"),
 			sap.String("path", childPath, "text"),
 			sap.String("work", fmt.Sprintf("expand synthetic node %s", childPath), "text"),
@@ -155,7 +159,8 @@ func emitTrace(hub *sap.Hub) {
 	fail := requestTraceFails
 	requestTraceFails = !requestTraceFails
 
-	ctx, root := hub.Start(context.Background(), "serve request",
+	ctx, root := hub.Start(
+		context.Background(), "serve request",
 		sap.LabeledAttr("method", "Method", "GET", "badge"),
 		sap.LabeledAttr("route", "Route", "/projects/:id", "badge"),
 		sap.LabeledAttr("query", "Query", "select * from projects where id = $1", "code:sql"),

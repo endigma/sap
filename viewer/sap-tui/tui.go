@@ -53,9 +53,11 @@ var keys = keyMap{
 	Help:   key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 }
 
-type eventMsg sapsse.RecordMessage
-type stateMsg sapsse.ConnectionState
-type repaintMsg struct{}
+type (
+	eventMsg   sapsse.RecordMessage
+	stateMsg   sapsse.ConnectionState
+	repaintMsg struct{}
+)
 
 type model struct {
 	vp             viewport.Model
