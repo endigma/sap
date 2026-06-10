@@ -16,7 +16,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 var errNoTTY = errors.New("monitor: stdout is not a TTY")
@@ -53,8 +53,8 @@ var keys = keyMap{
 	Help:   key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 }
 
-type eventMsg sse.RecordMessage
-type stateMsg sse.ConnectionState
+type eventMsg sapsse.RecordMessage
+type stateMsg sapsse.ConnectionState
 type repaintMsg struct{}
 
 type model struct {
@@ -65,7 +65,7 @@ type model struct {
 	store            *state.Store
 	staleOpenSpanIDs map[string]time.Time
 	renderCache      map[spanRenderCacheKey]string
-	conn             sse.ConnectionState
+	conn             sapsse.ConnectionState
 	paused           *atomic.Bool
 	width            int
 	height           int
@@ -75,7 +75,7 @@ type model struct {
 	now              time.Time
 }
 
-func run(ctx context.Context, records <-chan sse.RecordMessage, states <-chan sse.ConnectionState, storeOptions state.StoreOptions) error {
+func run(ctx context.Context, records <-chan sapsse.RecordMessage, states <-chan sapsse.ConnectionState, storeOptions state.StoreOptions) error {
 	if !term.IsTerminal(os.Stdout.Fd()) || !term.IsTerminal(os.Stdin.Fd()) {
 		return errNoTTY
 	}
@@ -211,14 +211,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case stateMsg:
-		m.conn = sse.ConnectionState(msg)
+		m.conn = sapsse.ConnectionState(msg)
 		now := time.Now()
 		switch m.conn.State {
-		case sse.StateConnected:
+		case sapsse.StateConnected:
 			m.conn.Err = ""
 			m.repaint()
 			return m, m.retryTimer.Stop()
-		case sse.StateRetrying:
+		case sapsse.StateRetrying:
 			m.markOpenSpansStale(now)
 			remaining := time.Until(m.conn.RetryAt)
 			if remaining < 0 {
@@ -227,7 +227,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.retryTimer = timer.NewWithInterval(remaining.Truncate(time.Second), time.Second)
 			m.repaint()
 			return m, m.retryTimer.Init()
-		case sse.StateDisconnected:
+		case sapsse.StateDisconnected:
 			m.markOpenSpansStale(now)
 			m.repaint()
 			return m, m.retryTimer.Stop()

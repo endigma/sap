@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 var (
@@ -28,7 +28,7 @@ func renderHeader(width int) string {
 	return headerStyle.Width(width).Render(" sap · live monitor ")
 }
 
-func renderFooter(width, roots int, conn sse.ConnectionState, retry timer.Model, paused bool, helpView string) string {
+func renderFooter(width, roots int, conn sapsse.ConnectionState, retry timer.Model, paused bool, helpView string) string {
 	separator := footerSeparator.Render(" · ")
 	left := footerItem("roots", fmt.Sprintf("%d", roots)) + separator + connectionStatus(conn, retry)
 	if paused {
@@ -46,13 +46,13 @@ func footerItem(key, desc string) string {
 	return footerKey.Render(key) + " " + footerDesc.Render(desc)
 }
 
-func connectionStatus(conn sse.ConnectionState, retry timer.Model) string {
+func connectionStatus(conn sapsse.ConnectionState, retry timer.Model) string {
 	switch conn.State {
-	case sse.StateConnected:
+	case sapsse.StateConnected:
 		return okStyle.Render("●")
-	case sse.StateConnecting:
+	case sapsse.StateConnecting:
 		return runStyle.Render("●")
-	case sse.StateRetrying:
+	case sapsse.StateRetrying:
 		return runStyle.Render("●") + " " + footerDesc.Render(retry.View())
 	default:
 		return dimStyle.Render("●")

@@ -15,7 +15,7 @@ import (
 	templcss "github.com/a-h/templ"
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 func appRoot() templ.CSSClass {
@@ -2524,7 +2524,7 @@ func EventCard(event *state.EventState, offset string, key string) templ.Compone
 	})
 }
 
-func Status(roots int, conn sse.ConnectionState, paused bool) templ.Component {
+func Status(roots int, conn sapsse.ConnectionState, paused bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

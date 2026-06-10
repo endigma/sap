@@ -1,4 +1,4 @@
-module github.com/endigma/sap/viewer/tui
+module github.com/endigma/sap/viewer/sap-tui
 
 go 1.26.3
 

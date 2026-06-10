@@ -7,7 +7,7 @@ import (
 	templcss "github.com/a-h/templ"
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 css appRoot() {
@@ -653,7 +653,7 @@ templ EventCard(event *state.EventState, offset string, key string) {
 	}
 }
 
-templ Status(roots int, conn sse.ConnectionState, paused bool) {
+templ Status(roots int, conn sapsse.ConnectionState, paused bool) {
 	<div class={ statusBar() }>
 		<div class={ statusGroup() }>
 			<span class={ pill() }><span class={ dot(), connectionDotClass(conn) }></span>{ connectionLabel(conn) }</span>

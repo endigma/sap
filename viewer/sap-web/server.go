@@ -11,7 +11,7 @@ import (
 
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 type snapshot struct {
@@ -24,7 +24,7 @@ type server struct {
 	mu               sync.RWMutex
 	store            *state.Store
 	staleOpenSpanIDs map[string]time.Time
-	conn             sse.ConnectionState
+	conn             sapsse.ConnectionState
 	paused           bool
 	maxRoots         int
 	subscribers      map[chan snapshot]struct{}
@@ -42,7 +42,7 @@ func newServer(maxRoots int, storeOptions state.StoreOptions) *server {
 	}
 }
 
-func (s *server) start(ctx context.Context, records <-chan sse.RecordMessage, states <-chan sse.ConnectionState) {
+func (s *server) start(ctx context.Context, records <-chan sapsse.RecordMessage, states <-chan sapsse.ConnectionState) {
 	go func() {
 		for {
 			select {
@@ -186,7 +186,7 @@ func (s *server) snapshot() snapshot {
 	return s.snapshotLocked(time.Now())
 }
 
-func (s *server) applyRecord(msg sse.RecordMessage) {
+func (s *server) applyRecord(msg sapsse.RecordMessage) {
 	if msg.Record == nil {
 		return
 	}
@@ -213,16 +213,16 @@ func (s *server) applyRecord(msg sse.RecordMessage) {
 	s.broadcastLocked(snap)
 }
 
-func (s *server) setConnectionState(conn sse.ConnectionState) {
+func (s *server) setConnectionState(conn sapsse.ConnectionState) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.conn = conn
 	now := time.Now()
 	switch conn.State {
-	case sse.StateConnected:
+	case sapsse.StateConnected:
 		s.conn.Err = ""
 		s.broadcastLocked(s.statusSnapshotLocked())
-	case sse.StateRetrying, sse.StateDisconnected:
+	case sapsse.StateRetrying, sapsse.StateDisconnected:
 		s.markOpenSpansStaleLocked(now)
 		s.broadcastLocked(s.snapshotLocked(now))
 	default:

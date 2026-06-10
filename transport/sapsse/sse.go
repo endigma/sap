@@ -1,4 +1,4 @@
-package sse
+package sapsse
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 // NewHandler creates an HTTP handler that streams hub records as server-sent events.
 func NewHandler(hub *sap.Hub) http.Handler {
 	if hub == nil {
-		panic("sap/transport/sse: nil Hub")
+		panic("sap/transport/sapsse: nil Hub")
 	}
 	marshaler := protojson.MarshalOptions{UseProtoNames: true}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

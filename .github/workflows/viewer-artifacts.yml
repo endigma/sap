@@ -3,12 +3,12 @@ name: Viewer Artifacts
 on:
   push:
     tags:
-      - "viewer/tui/v*"
-      - "viewer/web/v*"
+      - "viewer/sap-tui/v*"
+      - "viewer/sap-web/v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Viewer release tag to build, for example viewer/web/v0.1.0"
+        description: "Viewer release tag to build, for example viewer/sap-web/v0.1.0"
         required: true
         type: string
 
@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   build:
-    if: startsWith(inputs.tag || github.ref_name, 'viewer/tui/') || startsWith(inputs.tag || github.ref_name, 'viewer/web/')
+    if: startsWith(inputs.tag || github.ref_name, 'viewer/sap-tui/') || startsWith(inputs.tag || github.ref_name, 'viewer/sap-web/')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -51,15 +51,15 @@ jobs:
         run: |
           set -euo pipefail
           case "$RELEASE_TAG" in
-            viewer/tui/v*)
+            viewer/sap-tui/v*)
               echo "VIEWER=tui" >> "$GITHUB_ENV"
-              echo "MODULE_DIR=viewer/tui" >> "$GITHUB_ENV"
-              echo "BINARY=sap-viewer-tui" >> "$GITHUB_ENV"
+              echo "MODULE_DIR=viewer/sap-tui" >> "$GITHUB_ENV"
+              echo "BINARY=sap-tui" >> "$GITHUB_ENV"
               ;;
-            viewer/web/v*)
+            viewer/sap-web/v*)
               echo "VIEWER=web" >> "$GITHUB_ENV"
-              echo "MODULE_DIR=viewer/web" >> "$GITHUB_ENV"
-              echo "BINARY=sap-viewer-web" >> "$GITHUB_ENV"
+              echo "MODULE_DIR=viewer/sap-web" >> "$GITHUB_ENV"
+              echo "BINARY=sap-web" >> "$GITHUB_ENV"
               ;;
             *)
               echo "unsupported tag: $RELEASE_TAG" >&2

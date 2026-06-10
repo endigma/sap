@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/endigma/sap"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 
 	go emit(context.Background(), hub, *mode)
 
-	http.Handle("/live", sse.NewHandler(hub))
+	http.Handle("/live", sapsse.NewHandler(hub))
 	log.Printf("live monitor on http://127.0.0.1:8080/live (mode=%s)", *mode)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

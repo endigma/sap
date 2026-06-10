@@ -1,4 +1,4 @@
-module github.com/endigma/sap/viewer/web
+module github.com/endigma/sap/viewer/sap-web
 
 go 1.26.3
 

@@ -32,14 +32,14 @@
       "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md"
     },
-    "viewer/tui": {
-      "component": "viewer/tui",
+    "viewer/sap-tui": {
+      "component": "viewer/sap-tui",
       "include-component-in-tag": true,
       "tag-separator": "/",
       "changelog-path": "CHANGELOG.md"
     },
-    "viewer/web": {
-      "component": "viewer/web",
+    "viewer/sap-web": {
+      "component": "viewer/sap-web",
       "include-component-in-tag": true,
       "tag-separator": "/",
       "changelog-path": "CHANGELOG.md"

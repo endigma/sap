@@ -13,7 +13,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	records, states := sse.Stream(ctx, *url)
+	records, states := sapsse.Stream(ctx, *url)
 	storeOptions := state.StoreOptions{AllowUnknownParents: *allowUnknownParents}
 	viewer := newServer(*maxRoots, storeOptions)
 	viewer.start(ctx, records, states)

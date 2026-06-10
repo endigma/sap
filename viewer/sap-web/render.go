@@ -18,7 +18,7 @@ import (
 	"github.com/alecthomas/chroma/v2/styles"
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 func renderPage(w io.Writer, snap snapshot) error {
@@ -49,7 +49,7 @@ func renderTimelineAppendPatch(parent *state.SpanState, item timelineItem, depth
 	return renderToString(TimelineAppendPatch(parent, item, depth, now, staleOpenSpanIDs))
 }
 
-func renderStatus(roots int, conn sse.ConnectionState, paused bool) string {
+func renderStatus(roots int, conn sapsse.ConnectionState, paused bool) string {
 	return renderToString(Status(roots, conn, paused))
 }
 
@@ -386,33 +386,33 @@ func highlightCodeHTML(lang, src string) string {
 	return highlighted
 }
 
-func connectionDotClass(conn sse.ConnectionState) templ.CSSClass {
+func connectionDotClass(conn sapsse.ConnectionState) templ.CSSClass {
 	switch conn.State {
-	case sse.StateConnected:
+	case sapsse.StateConnected:
 		return dotConnected()
-	case sse.StateConnecting:
+	case sapsse.StateConnecting:
 		return dotConnecting()
-	case sse.StateRetrying:
+	case sapsse.StateRetrying:
 		return dotRetrying()
 	default:
 		return dotDisconnected()
 	}
 }
 
-func connectionLabel(conn sse.ConnectionState) string {
+func connectionLabel(conn sapsse.ConnectionState) string {
 	if conn.State == "" {
-		return sse.StateDisconnected
+		return sapsse.StateDisconnected
 	}
 	return conn.State
 }
 
-func connectionDetail(conn sse.ConnectionState) string {
+func connectionDetail(conn sapsse.ConnectionState) string {
 	switch conn.State {
-	case sse.StateConnecting:
+	case sapsse.StateConnecting:
 		if conn.Attempt > 0 {
 			return fmt.Sprintf("attempt %d", conn.Attempt)
 		}
-	case sse.StateRetrying:
+	case sapsse.StateRetrying:
 		if conn.Err != "" {
 			return conn.Err
 		}

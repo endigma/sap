@@ -13,7 +13,7 @@ go run ./example/live
 In another terminal, run the web viewer:
 
 ```bash
-cd viewer/web
+cd viewer/sap-web
 go run .
 ```
 

@@ -13,7 +13,7 @@ go run ./example/live
 In another terminal, run the TUI viewer:
 
 ```bash
-cd viewer/tui
+cd viewer/sap-tui
 go run .
 ```
 

@@ -1,5 +1,5 @@
-// Package sse streams Sap records over server-sent events.
-package sse
+// Package sapsse streams Sap records over server-sent events.
+package sapsse
 
 import (
 	"bufio"

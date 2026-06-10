@@ -8,7 +8,7 @@ Like tracing, but stupid and pretty.
 
 - `github.com/endigma/sap`: root SDK and in-process record hub
 - `github.com/endigma/sap/gen/sap/v1`: generated protobuf record types
-- `github.com/endigma/sap/transport/sse`: SSE server/client transport using protobuf JSON
+- `github.com/endigma/sap/transport/sapsse`: SSE server/client transport using protobuf JSON
 - `github.com/endigma/sap/state`: shared record-to-state reconstruction
 
 ## Generate Code
