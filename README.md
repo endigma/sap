@@ -30,11 +30,20 @@ defer span.Complete()
 span.SetAttributes(sap.Attr("status", "running", "badge"))
 span.AddEvent("cache_miss", sap.Attr("key", "health-check"))
 
-_, child := hub.Start(ctx, "db")
+_, child := sap.Start(ctx, "db")
 child.Complete()
-
-_ = ctx
 ```
+
+Only the code that constructs the hub needs a `*Hub`: `hub.Start` stores the
+hub in the returned context, so downstream packages start child spans with
+`sap.Start(ctx, ...)`. A context without a span can carry a hub via
+`sap.ContextWithHub`.
+
+Instrumentation is safe unconditionally. When the context carries no hub,
+`sap.Start` returns an inert span that publishes nothing, and all methods on
+a nil `*Hub` or nil `*Span` (as returned by `sap.FromContext` when absent)
+are no-ops. When attributes are expensive to compute, gate them with
+`span.Recording()`, which is false for nil, inert, and ended spans.
 
 ## SSE Endpoint
 
