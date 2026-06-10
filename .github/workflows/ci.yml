@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  workspace:
+    name: Build and test (workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: "**/go.sum"
+
+      - name: Build all modules
+        run: |
+          set -euo pipefail
+          for dir in . viewer/sap-tui viewer/sap-web; do
+            go build -C "$dir" ./...
+          done
+
+      - name: Vet all modules
+        run: |
+          set -euo pipefail
+          for dir in . viewer/sap-tui viewer/sap-web; do
+            go vet -C "$dir" ./...
+          done
+
+      - name: Test
+        run: go test ./...
+
+  published:
+    name: Build viewers against released sap (GOWORK=off)
+    runs-on: ubuntu-latest
+    env:
+      GOWORK: "off"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: "**/go.sum"
+
+      # Verifies each viewer module compiles against its released
+      # dependencies, the way `go install module@tag` will build it.
+      # A failure means main is mid-release-dance: viewers import sap
+      # code that their go.mod's pinned sap version does not contain.
+      # That state is allowed on main and feature branches (warning),
+      # but a viewer release PR must never merge in that state, since
+      # the resulting tag would not compile for `go install`.
+      - name: Build viewers without the workspace
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -uo pipefail
+          fail=0
+          for dir in viewer/sap-tui viewer/sap-web; do
+            echo "::group::${dir}"
+            if ! go build -C "$dir" ./...; then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$fail" -eq 0 ]; then
+            exit 0
+          fi
+          case "${HEAD_REF:-}" in
+            release-please--*)
+              echo "::error::viewer modules do not build against released dependencies; merging this release PR would publish a tag that fails 'go install'. Release sap and bump the viewers' go.mod first."
+              exit 1
+              ;;
+            *)
+              echo "::warning::viewer modules do not build against released dependencies (GOWORK=off). A sap release and viewer go.mod bump are pending; viewer release PRs are blocked until then."
+              exit 0
+              ;;
+          esac
