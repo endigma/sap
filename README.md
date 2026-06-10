@@ -27,8 +27,8 @@ ctx, span := hub.Start(context.Background(), "request",
 )
 defer span.Complete()
 
-span.SetAttributes(sap.Attr("status", "running", "badge"))
-span.AddEvent("cache_miss", sap.Attr("key", "health-check"))
+span.SetAttributes(sap.String("status", "running", "badge"))
+span.AddEvent("cache_miss", sap.WithAttributes(sap.String("key", "health-check")))
 
 _, child := sap.Start(ctx, "db")
 child.Complete()
@@ -44,6 +44,28 @@ Instrumentation is safe unconditionally. When the context carries no hub,
 a nil `*Hub` or nil `*Span` (as returned by `sap.FromContext` when absent)
 are no-ops. When attributes are expensive to compute, gate them with
 `span.Recording()`, which is false for nil, inert, and ended spans.
+
+Spans always start at `time.Now()`; back-dating is deliberately unsupported,
+so bracket operations with a span while they run. For events where duration is
+only known after completion, use `span.AddEvent(...)`
+
+```go
+span.AddEvent("tls.handshake_done",
+	sap.WithTimestamp(info.DoneAt),
+	sap.WithAttributes(sap.Duration("took", info.Duration)),
+)
+```
+
+Events carry a severity to indicate warnings and failures on a span
+that otherwise keeps running: `sap.WithSeverity(sap.SeverityWarn)` or
+`sap.SeverityError` which the viewers may render highlighted. Events without
+severity or set to `sap.SeverityInfo` are informational.
+
+Attribute values are strings; `sap.String` creates one directly, and
+`sap.Int`, `sap.Int64`, `sap.Float64`, `sap.Bool`, and `sap.Duration`
+format common types. `span.SpanID()` and
+`span.TraceID()` expose the span's identifiers for correlating with other
+tracing or logging systems.
 
 ## SSE Endpoint
 

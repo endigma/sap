@@ -2,6 +2,9 @@
 package sap
 
 import (
+	"strconv"
+	"time"
+
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"google.golang.org/protobuf/proto"
 )
@@ -9,8 +12,8 @@ import (
 // Attribute describes a key-value annotation attached to a span or event.
 type Attribute = sapv1.Attribute
 
-// Attr creates an attribute with optional display hints.
-func Attr(key, value string, hints ...string) *Attribute {
+// String creates a string attribute with optional display hints.
+func String(key, value string, hints ...string) *Attribute {
 	return sapv1.Attribute_builder{
 		Key:          new(key),
 		Value:        new(value),
@@ -26,6 +29,31 @@ func LabeledAttr(key, label, value string, hints ...string) *Attribute {
 		Value:        new(value),
 		DisplayHints: dedupeStrings(hints),
 	}.Build()
+}
+
+// Bool creates a boolean attribute with optional display hints.
+func Bool(key string, value bool, hints ...string) *Attribute {
+	return String(key, strconv.FormatBool(value), hints...)
+}
+
+// Int creates an integer attribute with optional display hints.
+func Int(key string, value int, hints ...string) *Attribute {
+	return String(key, strconv.Itoa(value), hints...)
+}
+
+// Int64 creates an integer attribute with optional display hints.
+func Int64(key string, value int64, hints ...string) *Attribute {
+	return String(key, strconv.FormatInt(value, 10), hints...)
+}
+
+// Float64 creates a floating-point attribute with optional display hints.
+func Float64(key string, value float64, hints ...string) *Attribute {
+	return String(key, strconv.FormatFloat(value, 'g', -1, 64), hints...)
+}
+
+// Duration creates a duration attribute with optional display hints.
+func Duration(key string, value time.Duration, hints ...string) *Attribute {
+	return String(key, value.String(), hints...)
 }
 
 func cloneAttributes(attrs []*Attribute) []*sapv1.Attribute {

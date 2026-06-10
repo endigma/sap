@@ -17,12 +17,12 @@ func TestSpanLifecycle(t *testing.T) {
 	defer cancel()
 
 	ctx, root := hub.Start(context.Background(), "root", LabeledAttr("goal", "Goal", "ship it", "text", "text"))
-	_, child := hub.Start(ctx, "child", Attr("step", "one"))
-	root.SetAttributes(Attr("status", "running", "badge"))
-	root.AddEvent("warn", Attr("message", "careful", "text"))
+	_, child := hub.Start(ctx, "child", String("step", "one"))
+	root.SetAttributes(String("status", "running", "badge"))
+	root.AddEvent("warn", WithAttributes(String("message", "careful", "text")))
 	root.Complete()
 	root.Error(errors.New("ignored"))
-	root.SetAttributes(Attr("late", "ignored"))
+	root.SetAttributes(String("late", "ignored"))
 	root.AddEvent("late")
 	child.Error(errors.New("boom"))
 
@@ -159,7 +159,7 @@ func TestStart(t *testing.T) {
 		if span == nil {
 			t.Fatal("Start returned a nil span")
 		}
-		span.SetAttributes(Attr("k", "v"))
+		span.SetAttributes(String("k", "v"))
 		span.AddEvent("event")
 		span.Complete()
 		if FromContext(ctx) != span {
@@ -260,10 +260,163 @@ func TestNilSpan(t *testing.T) {
 
 	t.Run("ignores all method calls", func(t *testing.T) {
 		var span *Span
-		span.SetAttributes(Attr("k", "v"))
+		span.SetAttributes(String("k", "v"))
 		span.AddEvent("event")
 		span.Complete()
 		span.Error(errors.New("boom"))
+	})
+}
+
+func TestAddEvent(t *testing.T) {
+	newSpan := func(t *testing.T) (*Span, <-chan *sapv1.Record) {
+		t.Helper()
+		hub := NewHub()
+		t.Cleanup(hub.Close)
+		records, cancel := hub.Subscribe(8)
+		t.Cleanup(cancel)
+		_, span := hub.Start(context.Background(), "op")
+		return span, records
+	}
+
+	t.Run("stamps the event with the provided timestamp", func(t *testing.T) {
+		span, records := newSpan(t)
+		at := time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC)
+		span.AddEvent("late.fact", WithTimestamp(at))
+
+		got := drainRecords(records, 2, time.Second)
+		if len(got) != 2 {
+			t.Fatalf("got %d records, want 2", len(got))
+		}
+		event := got[1].GetSpanEvent()
+		if event == nil || !event.GetEventAt().AsTime().Equal(at) {
+			t.Fatalf("event = %+v, want event_at %v", event, at)
+		}
+	})
+
+	t.Run("defaults the event timestamp to now", func(t *testing.T) {
+		span, records := newSpan(t)
+		before := time.Now()
+		span.AddEvent("event")
+		after := time.Now()
+
+		got := drainRecords(records, 2, time.Second)
+		if len(got) != 2 {
+			t.Fatalf("got %d records, want 2", len(got))
+		}
+		eventAt := got[1].GetSpanEvent().GetEventAt().AsTime()
+		if eventAt.Before(before) || eventAt.After(after) {
+			t.Fatalf("event_at = %v, want within [%v, %v]", eventAt, before, after)
+		}
+	})
+
+	t.Run("records the provided severity", func(t *testing.T) {
+		span, records := newSpan(t)
+		span.AddEvent("cache.write_failed", WithSeverity(SeverityError))
+
+		got := drainRecords(records, 2, time.Second)
+		if len(got) != 2 {
+			t.Fatalf("got %d records, want 2", len(got))
+		}
+		if severity := got[1].GetSpanEvent().GetSeverity(); severity != sapv1.SpanEvent_SEVERITY_ERROR {
+			t.Fatalf("severity = %v, want SEVERITY_ERROR", severity)
+		}
+	})
+
+	t.Run("defaults to unspecified severity", func(t *testing.T) {
+		span, records := newSpan(t)
+		span.AddEvent("event")
+
+		got := drainRecords(records, 2, time.Second)
+		if len(got) != 2 {
+			t.Fatalf("got %d records, want 2", len(got))
+		}
+		if severity := got[1].GetSpanEvent().GetSeverity(); severity != sapv1.SpanEvent_SEVERITY_UNSPECIFIED {
+			t.Fatalf("severity = %v, want SEVERITY_UNSPECIFIED", severity)
+		}
+	})
+
+	t.Run("accumulates attributes across options and skips nil options", func(t *testing.T) {
+		span, records := newSpan(t)
+		span.AddEvent("event",
+			WithAttributes(String("first", "1")),
+			nil,
+			WithAttributes(String("second", "2"), String("third", "3")),
+		)
+
+		got := drainRecords(records, 2, time.Second)
+		if len(got) != 2 {
+			t.Fatalf("got %d records, want 2", len(got))
+		}
+		attrs := got[1].GetSpanEvent().GetAttributes()
+		if len(attrs) != 3 || attrs[0].GetKey() != "first" || attrs[1].GetKey() != "second" || attrs[2].GetKey() != "third" {
+			t.Fatalf("event attrs = %+v", attrs)
+		}
+	})
+}
+
+func TestSpanIdentifiers(t *testing.T) {
+	t.Run("match the published start record", func(t *testing.T) {
+		hub := NewHub()
+		t.Cleanup(hub.Close)
+		records, cancel := hub.Subscribe(8)
+		defer cancel()
+
+		_, span := hub.Start(context.Background(), "op")
+		defer span.Complete()
+
+		got := drainRecords(records, 1, time.Second)
+		if len(got) != 1 {
+			t.Fatalf("got %d records, want 1", len(got))
+		}
+		started := got[0].GetSpanStarted()
+		if span.SpanID() == "" || span.SpanID() != started.GetSpanId() {
+			t.Fatalf("SpanID() = %q, record has %q", span.SpanID(), started.GetSpanId())
+		}
+		if span.TraceID() == "" || span.TraceID() != started.GetTraceId() {
+			t.Fatalf("TraceID() = %q, record has %q", span.TraceID(), started.GetTraceId())
+		}
+	})
+
+	t.Run("are empty for an inert span", func(t *testing.T) {
+		_, span := Start(context.Background(), "orphan")
+		if span.SpanID() != "" || span.TraceID() != "" {
+			t.Fatalf("inert span IDs = %q/%q, want empty", span.SpanID(), span.TraceID())
+		}
+	})
+
+	t.Run("are empty for a nil span", func(t *testing.T) {
+		var span *Span
+		if span.SpanID() != "" || span.TraceID() != "" {
+			t.Fatal("nil span returned non-empty IDs")
+		}
+	})
+}
+
+func TestTypedAttributeHelpers(t *testing.T) {
+	t.Run("format values as strings", func(t *testing.T) {
+		cases := []struct {
+			attr *Attribute
+			key  string
+			want string
+		}{
+			{Bool("ok", true), "ok", "true"},
+			{Int("count", -3), "count", "-3"},
+			{Int64("big", 1<<40), "big", "1099511627776"},
+			{Float64("ratio", 0.25), "ratio", "0.25"},
+			{Duration("took", 1500*time.Millisecond), "took", "1.5s"},
+		}
+		for _, tc := range cases {
+			if tc.attr.GetKey() != tc.key || tc.attr.GetValue() != tc.want {
+				t.Errorf("attr %q = %q, want %q", tc.attr.GetKey(), tc.attr.GetValue(), tc.want)
+			}
+		}
+	})
+
+	t.Run("pass display hints through", func(t *testing.T) {
+		attr := Int("count", 7, "badge")
+		if len(attr.GetDisplayHints()) != 1 || attr.GetDisplayHints()[0] != "badge" {
+			t.Fatalf("display hints = %+v, want [badge]", attr.GetDisplayHints())
+		}
 	})
 }
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +21,21 @@ import (
 )
 
 func renderPage(w io.Writer, snap snapshot) error {
-	return Page(snap).Render(context.Background(), w)
+	return Page(snap).Render(renderContext(), w)
+}
+
+// renderContext marks all stylesheet classes as already rendered so
+// fragments never inline <style> tags; the cascade stays controlled by the
+// stylesheet served by the CSS middleware.
+func renderContext() context.Context {
+	ctx := templ.InitializeContext(context.Background())
+	classes := stylesheetClasses()
+	items := make([]any, len(classes))
+	for i, class := range classes {
+		items[i] = class
+	}
+	_ = templ.RenderCSSItems(ctx, io.Discard, items...)
+	return ctx
 }
 
 func renderRoots(roots []*state.SpanState, now time.Time, staleOpenSpanIDs map[string]time.Time) string {
@@ -45,7 +58,7 @@ func renderSpanTimelinePatch(span *state.SpanState, depth int, now time.Time, st
 	return renderToString(SpanTimelinePatch(span, depth, now, staleOpenSpanIDs))
 }
 
-func renderTimelineAppendPatch(parent *state.SpanState, item timelineItem, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) string {
+func renderTimelineAppendPatch(parent *state.SpanState, item state.TimelineItem, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time) string {
 	return renderToString(TimelineAppendPatch(parent, item, depth, now, staleOpenSpanIDs))
 }
 
@@ -55,7 +68,7 @@ func renderStatus(roots int, conn sapsse.ConnectionState, paused bool) string {
 
 func renderToString(component templ.Component) string {
 	var b strings.Builder
-	if err := component.Render(context.Background(), &b); err != nil {
+	if err := component.Render(renderContext(), &b); err != nil {
 		return fmt.Sprintf(`<section class="empty"><div><strong>render error</strong><br><span>%s</span></div></section>`, html.EscapeString(err.Error()))
 	}
 	return b.String()
@@ -152,52 +165,7 @@ func timingView(span *state.SpanState, now time.Time, staleOpenSpanIDs map[strin
 	return formatDuration(now.Sub(span.StartedAt))
 }
 
-type timelineItem struct {
-	Kind  string
-	At    time.Time
-	Event *state.EventState
-	Span  *state.SpanState
-	index int
-}
-
-func timelineItems(span *state.SpanState) []timelineItem {
-	if span == nil {
-		return nil
-	}
-	items := make([]timelineItem, 0, len(span.Events)+len(span.Children))
-	for i, event := range span.Events {
-		if event == nil {
-			continue
-		}
-		items = append(items, timelineItem{Kind: "event", At: event.At, Event: event, index: i})
-	}
-	base := len(items)
-	for i, child := range span.Children {
-		if child == nil {
-			continue
-		}
-		items = append(items, timelineItem{Kind: "span", At: child.StartedAt, Span: child, index: base + i})
-	}
-	sort.SliceStable(items, func(i, j int) bool {
-		left, right := items[i], items[j]
-		if left.At.IsZero() && right.At.IsZero() {
-			return left.index < right.index
-		}
-		if left.At.IsZero() {
-			return false
-		}
-		if right.At.IsZero() {
-			return true
-		}
-		if left.At.Equal(right.At) {
-			return left.index < right.index
-		}
-		return left.At.Before(right.At)
-	})
-	return items
-}
-
-func timelineOffset(parent *state.SpanState, item timelineItem) string {
+func timelineOffset(parent *state.SpanState, item state.TimelineItem) string {
 	if parent == nil || parent.StartedAt.IsZero() || item.At.IsZero() {
 		return ""
 	}
@@ -273,7 +241,7 @@ func safeCSSIdent(value, fallback string) string {
 	return b.String()
 }
 
-func eventCardKey(parent *state.SpanState, item timelineItem) string {
+func eventCardKey(parent *state.SpanState, item state.TimelineItem) string {
 	parentID := ""
 	if parent != nil {
 		parentID = parent.SpanID
@@ -282,7 +250,7 @@ func eventCardKey(parent *state.SpanState, item timelineItem) string {
 	if item.Event != nil {
 		name = item.Event.Name
 	}
-	return fmt.Sprintf("event:%s:%d:%d:%s", parentID, item.At.UnixNano(), item.index, name)
+	return fmt.Sprintf("event:%s:%d:%d:%s", parentID, item.At.UnixNano(), item.Index, name)
 }
 
 func formatDuration(d time.Duration) string {
@@ -441,7 +409,7 @@ func stylesheetClasses() []templ.CSSClass {
 		buttonBase(), dangerButton(), emptyState(), emptyTitle(), traceList(), spanCard(), spanChildren(),
 		spanHeader(), spanTitle(), spanName(), spanMeta(), spanState(), statusOK(), statusError(), spinner(),
 		sectionBlock(), sectionTitle(), attrsGrid(), attrRow(), attrLabelClass(), attrValueClass(), badge(),
-		codeBlock(), codeText(), timelineList(), timelineItemClass(), eventCardClass(), eventHeaderClass(),
+		codeBlock(), codeText(), timelineList(), timelineItemClass(), eventCardClass(), eventWarnCard(), eventErrorCard(), eventHeaderClass(),
 		eventOffsetClass(), errorMessage(),
 	}
 }

@@ -28,7 +28,8 @@ type Span struct {
 
 // Start starts a span on the hub and returns a context containing both the
 // span and the hub, so downstream code can start child spans with the
-// package-level Start without holding a *Hub.
+// package-level Start without holding a *Hub. Spans always start at
+// time.Now(); back-dating is deliberately unsupported.
 func (h *Hub) Start(ctx context.Context, name string, attrs ...*Attribute) (context.Context, *Span) {
 	return startWithHub(ctx, h, name, attrs...)
 }
@@ -77,6 +78,22 @@ func (s *Span) Recording() bool {
 	return !s.ended
 }
 
+// SpanID returns the span's ID, or "" for a nil or inert span.
+func (s *Span) SpanID() string {
+	if s == nil {
+		return ""
+	}
+	return s.spanID
+}
+
+// TraceID returns the span's trace ID, or "" for a nil or inert span.
+func (s *Span) TraceID() string {
+	if s == nil {
+		return ""
+	}
+	return s.traceID
+}
+
 // SetAttributes emits an update with attributes for the span.
 func (s *Span) SetAttributes(attrs ...*Attribute) {
 	if s == nil || s.hub == nil {
@@ -97,25 +114,78 @@ func (s *Span) SetAttributes(attrs ...*Attribute) {
 	}.Build())
 }
 
+// Severity classifies an event; events without one are informational.
+type Severity = sapv1.SpanEvent_Severity
+
+const (
+	SeverityInfo  Severity = sapv1.SpanEvent_SEVERITY_INFO
+	SeverityWarn  Severity = sapv1.SpanEvent_SEVERITY_WARN
+	SeverityError Severity = sapv1.SpanEvent_SEVERITY_ERROR
+)
+
+// EventOption configures an event emitted by [Span.AddEvent].
+type EventOption func(*eventConfig)
+
+type eventConfig struct {
+	at       time.Time
+	attrs    []*Attribute
+	severity Severity
+}
+
+// WithTimestamp sets the event's timestamp instead of the default time.Now().
+func WithTimestamp(at time.Time) EventOption {
+	return func(cfg *eventConfig) {
+		cfg.at = at
+	}
+}
+
+// WithAttributes appends attributes to the event.
+func WithAttributes(attrs ...*Attribute) EventOption {
+	return func(cfg *eventConfig) {
+		cfg.attrs = append(cfg.attrs, attrs...)
+	}
+}
+
+// WithSeverity sets the event's severity.
+func WithSeverity(severity Severity) EventOption {
+	return func(cfg *eventConfig) {
+		cfg.severity = severity
+	}
+}
+
 // AddEvent emits a named event for the span.
-func (s *Span) AddEvent(name string, attrs ...*Attribute) {
+func (s *Span) AddEvent(name string, opts ...EventOption) {
 	if s == nil || s.hub == nil {
 		return
+	}
+	var cfg eventConfig
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&cfg)
+		}
+	}
+	eventAt := cfg.at
+	if eventAt.IsZero() {
+		eventAt = time.Now()
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.ended {
 		return
 	}
+	event := sapv1.SpanEvent_builder{
+		TraceId:    new(s.traceID),
+		SpanId:     new(s.spanID),
+		Name:       new(name),
+		EventAt:    timestamppb.New(eventAt),
+		Attributes: cloneAttributes(cfg.attrs),
+	}
+	if cfg.severity != sapv1.SpanEvent_SEVERITY_UNSPECIFIED {
+		event.Severity = cfg.severity.Enum()
+	}
 	s.hub.Publish(sapv1.Record_builder{
 		EmittedAt: timestamppb.Now(),
-		SpanEvent: sapv1.SpanEvent_builder{
-			TraceId:    new(s.traceID),
-			SpanId:     new(s.spanID),
-			Name:       new(name),
-			EventAt:    timestamppb.Now(),
-			Attributes: cloneAttributes(attrs),
-		}.Build(),
+		SpanEvent: event.Build(),
 	}.Build())
 }
 

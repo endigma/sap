@@ -22,6 +22,7 @@ var (
 	okStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("78")).Bold(true)
 	errStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Bold(true)
 	runStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Bold(true)
+	warnStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Bold(true)
 )
 
 func renderHeader(width int) string {
@@ -104,12 +105,23 @@ func renderSpan(span *state.SpanState, depth, width int, spin string, now time.T
 	if attrs != "" {
 		parts = append(parts, dimStyle.Render(strings.Repeat("─", inner)), attrs)
 	}
-	if events := renderEvents(span.Events, inner, span.StartedAt); events != "" {
-		parts = append(parts, dimStyle.Render(strings.Repeat("─", inner)), events)
+	var eventGroup []*state.EventState
+	flushEvents := func() {
+		if len(eventGroup) == 0 {
+			return
+		}
+		parts = append(parts, dimStyle.Render(strings.Repeat("─", inner)), renderEvents(eventGroup, inner, span.StartedAt))
+		eventGroup = nil
 	}
-	for _, child := range span.Children {
-		parts = append(parts, renderSpan(child, depth+1, inner, spin, now, staleOpenSpanIDs, cache))
+	for _, item := range state.TimelineItems(span) {
+		if item.Event != nil {
+			eventGroup = append(eventGroup, item.Event)
+			continue
+		}
+		flushEvents()
+		parts = append(parts, renderSpan(item.Span, depth+1, inner, spin, now, staleOpenSpanIDs, cache))
 	}
+	flushEvents()
 	rendered := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(color).Padding(0, 1).Width(width - 2).Render(strings.Join(parts, "\n"))
 	if cacheable && cache != nil {
 		key := spanRenderCacheKey{spanID: span.SpanID, depth: depth, width: width}
@@ -171,6 +183,12 @@ func renderEvents(events []*state.EventState, width int, startedAt time.Time) st
 	var parts []string
 	for _, event := range events {
 		headerLeft := dimStyle.Render("* ") + event.Name
+		switch event.Severity {
+		case sapv1.SpanEvent_SEVERITY_WARN:
+			headerLeft = warnStyle.Render("* ") + warnStyle.Render(event.Name)
+		case sapv1.SpanEvent_SEVERITY_ERROR:
+			headerLeft = errStyle.Render("* ") + errStyle.Render(event.Name)
+		}
 		header := headerLeft
 		if offset := eventOffset(startedAt, event.At); offset != "" {
 			headerRight := dimStyle.Render(offset)

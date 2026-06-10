@@ -54,9 +54,17 @@ message SpanEnded {
 }
 
 message SpanEvent {
+  enum Severity {
+    SEVERITY_UNSPECIFIED = 0;
+    SEVERITY_INFO = 1;
+    SEVERITY_WARN = 2;
+    SEVERITY_ERROR = 3;
+  }
+
   string trace_id = 1;
   string span_id = 2;
   string name = 3;
   google.protobuf.Timestamp event_at = 4;
   repeated Attribute attributes = 5;
+  Severity severity = 6;
 }

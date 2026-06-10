@@ -1,5 +1,5 @@
 module github.com/endigma/sap
 
-go 1.26.3
+go 1.26
 
 require google.golang.org/protobuf v1.36.11

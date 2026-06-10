@@ -21,13 +21,12 @@ type snapshot struct {
 }
 
 type server struct {
-	mu               sync.RWMutex
-	store            *state.Store
-	staleOpenSpanIDs map[string]time.Time
-	conn             sapsse.ConnectionState
-	paused           bool
-	maxRoots         int
-	subscribers      map[chan snapshot]struct{}
+	mu          sync.RWMutex
+	store       *state.Store
+	conn        sapsse.ConnectionState
+	paused      bool
+	maxRoots    int
+	subscribers map[chan snapshot]struct{}
 }
 
 func newServer(maxRoots int, storeOptions state.StoreOptions) *server {
@@ -35,10 +34,9 @@ func newServer(maxRoots int, storeOptions state.StoreOptions) *server {
 		maxRoots = 50
 	}
 	return &server{
-		store:            state.NewStoreWithOptions(storeOptions),
-		staleOpenSpanIDs: make(map[string]time.Time),
-		maxRoots:         maxRoots,
-		subscribers:      make(map[chan snapshot]struct{}),
+		store:       state.NewStoreWithOptions(storeOptions),
+		maxRoots:    maxRoots,
+		subscribers: make(map[chan snapshot]struct{}),
 	}
 }
 
@@ -199,7 +197,6 @@ func (s *server) applyRecord(msg sapsse.RecordMessage) {
 	spanID := recordSpanID(msg.Record)
 	s.store.Apply(msg.Record)
 	s.store.LimitRoots(s.maxRoots)
-	s.pruneStaleOpenSpanIDsLocked()
 	now := time.Now()
 	if !sameStrings(beforeRootIDs, s.rootIDsLocked()) {
 		s.broadcastLocked(s.snapshotLocked(now))
@@ -223,7 +220,7 @@ func (s *server) setConnectionState(conn sapsse.ConnectionState) {
 		s.conn.Err = ""
 		s.broadcastLocked(s.statusSnapshotLocked())
 	case sapsse.StateRetrying, sapsse.StateDisconnected:
-		s.markOpenSpansStaleLocked(now)
+		s.store.MarkOpenSpansStale(now)
 		s.broadcastLocked(s.snapshotLocked(now))
 	default:
 		s.broadcastLocked(s.statusSnapshotLocked())
@@ -236,8 +233,6 @@ func (s *server) togglePaused() snapshot {
 	if !s.paused {
 		s.paused = true
 		s.store.ClearOpenSpans()
-		s.staleOpenSpanIDs = make(map[string]time.Time)
-		s.pruneStaleOpenSpanIDsLocked()
 	} else {
 		s.paused = false
 	}
@@ -248,7 +243,6 @@ func (s *server) clear() snapshot {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.store.Clear()
-	s.staleOpenSpanIDs = make(map[string]time.Time)
 	return s.broadcastLocked(s.snapshotLocked(time.Now()))
 }
 
@@ -272,7 +266,7 @@ func (s *server) broadcastLocked(snap snapshot) snapshot {
 
 func (s *server) snapshotLocked(now time.Time) snapshot {
 	return snapshot{
-		RootsHTML:  renderRoots(s.store.Roots(), now, s.staleOpenSpanIDs),
+		RootsHTML:  renderRoots(s.store.Roots(), now, s.store.StaleOpenSpanIDs()),
 		StatusHTML: renderStatus(len(s.store.Roots()), s.conn, s.paused),
 	}
 }
@@ -311,77 +305,52 @@ func (s *server) recordPatchSnapshotLocked(record *sapv1.Record, spanID string, 
 		if started.GetParentSpanId() == "" {
 			return snapshot{}, false
 		}
-		parent, depth := s.findSpanByIDLocked(started.GetParentSpanId())
+		parent, depth := s.store.FindSpan(started.GetParentSpanId())
 		if parent == nil {
 			return snapshot{}, false
 		}
-		if len(timelineItems(parent)) <= 1 {
-			return s.patchSnapshotLocked(renderSpanTimelinePatch(parent, depth, now, s.staleOpenSpanIDs)), true
+		stale := s.store.StaleOpenSpanIDs()
+		if len(state.TimelineItems(parent)) <= 1 {
+			return s.patchSnapshotLocked(renderSpanTimelinePatch(parent, depth, now, stale)), true
 		}
 		child, childIndex := childSpanByID(parent, spanID)
 		if child == nil {
-			return s.patchSnapshotLocked(renderSpanTimelinePatch(parent, depth, now, s.staleOpenSpanIDs)), true
+			return s.patchSnapshotLocked(renderSpanTimelinePatch(parent, depth, now, stale)), true
 		}
-		item := timelineItem{Kind: "span", At: child.StartedAt, Span: child, index: len(parent.Events) + childIndex}
-		return s.patchSnapshotLocked(renderTimelineAppendPatch(parent, item, depth, now, s.staleOpenSpanIDs)), true
+		item := state.TimelineItem{At: child.StartedAt, Span: child, Index: len(parent.Events) + childIndex}
+		return s.patchSnapshotLocked(renderTimelineAppendPatch(parent, item, depth, now, stale)), true
 	case sapv1.Record_SpanUpdated_case:
-		span, _ := s.findSpanByIDLocked(spanID)
+		span, _ := s.store.FindSpan(spanID)
 		if span == nil {
 			return snapshot{}, false
 		}
 		return s.patchSnapshotLocked(renderSpanAttributesPatch(span)), true
 	case sapv1.Record_SpanEvent_case:
-		span, depth := s.findSpanByIDLocked(spanID)
+		span, depth := s.store.FindSpan(spanID)
 		if span == nil {
 			return snapshot{}, false
 		}
-		if len(timelineItems(span)) <= 1 || len(span.Events) == 0 {
-			return s.patchSnapshotLocked(renderSpanTimelinePatch(span, depth, now, s.staleOpenSpanIDs)), true
+		stale := s.store.StaleOpenSpanIDs()
+		if len(state.TimelineItems(span)) <= 1 || len(span.Events) == 0 {
+			return s.patchSnapshotLocked(renderSpanTimelinePatch(span, depth, now, stale)), true
 		}
 		eventIndex := len(span.Events) - 1
 		event := span.Events[eventIndex]
-		item := timelineItem{Kind: "event", At: event.At, Event: event, index: eventIndex}
-		return s.patchSnapshotLocked(renderTimelineAppendPatch(span, item, depth, now, s.staleOpenSpanIDs)), true
+		item := state.TimelineItem{At: event.At, Event: event, Index: eventIndex}
+		return s.patchSnapshotLocked(renderTimelineAppendPatch(span, item, depth, now, stale)), true
 	case sapv1.Record_SpanEnded_case:
-		span, _ := s.findSpanByIDLocked(spanID)
+		span, _ := s.store.FindSpan(spanID)
 		if span == nil {
 			return snapshot{}, false
 		}
-		return s.patchSnapshotLocked(renderSpanSummaryPatch(span, now, s.staleOpenSpanIDs)), true
+		return s.patchSnapshotLocked(renderSpanSummaryPatch(span, now, s.store.StaleOpenSpanIDs())), true
 	default:
-		span, depth := s.findSpanByIDLocked(spanID)
+		span, depth := s.store.FindSpan(spanID)
 		if span == nil {
 			return snapshot{}, false
 		}
-		return s.patchSnapshotLocked(renderSpanPatch(span, depth, now, s.staleOpenSpanIDs)), true
+		return s.patchSnapshotLocked(renderSpanPatch(span, depth, now, s.store.StaleOpenSpanIDs())), true
 	}
-}
-
-func (s *server) findSpanByIDLocked(spanID string) (*state.SpanState, int) {
-	if spanID == "" {
-		return nil, 0
-	}
-	for _, root := range s.store.Roots() {
-		if span, depth := findSpanByID(root, spanID, 0); span != nil {
-			return span, depth
-		}
-	}
-	return nil, 0
-}
-
-func findSpanByID(span *state.SpanState, spanID string, depth int) (*state.SpanState, int) {
-	if span == nil {
-		return nil, 0
-	}
-	if span.SpanID == spanID {
-		return span, depth
-	}
-	for _, child := range span.Children {
-		if found, foundDepth := findSpanByID(child, spanID, depth+1); found != nil {
-			return found, foundDepth
-		}
-	}
-	return nil, 0
 }
 
 func childSpanByID(parent *state.SpanState, spanID string) (*state.SpanState, int) {
@@ -423,51 +392,6 @@ func recordSpanID(record *sapv1.Record) string {
 		return record.GetSpanEvent().GetSpanId()
 	default:
 		return ""
-	}
-}
-
-func (s *server) markOpenSpansStaleLocked(at time.Time) {
-	for _, root := range s.store.Roots() {
-		markOpenSpanStale(root, at, s.staleOpenSpanIDs)
-	}
-}
-
-func markOpenSpanStale(span *state.SpanState, at time.Time, stale map[string]time.Time) {
-	if span == nil {
-		return
-	}
-	if !span.Ended {
-		if _, ok := stale[span.SpanID]; !ok {
-			stale[span.SpanID] = at
-		}
-	}
-	for _, child := range span.Children {
-		markOpenSpanStale(child, at, stale)
-	}
-}
-
-func (s *server) pruneStaleOpenSpanIDsLocked() {
-	if len(s.staleOpenSpanIDs) == 0 {
-		return
-	}
-	current := make(map[string]struct{})
-	for _, root := range s.store.Roots() {
-		collectSpanIDs(root, current)
-	}
-	for spanID := range s.staleOpenSpanIDs {
-		if _, ok := current[spanID]; !ok {
-			delete(s.staleOpenSpanIDs, spanID)
-		}
-	}
-}
-
-func collectSpanIDs(span *state.SpanState, ids map[string]struct{}) {
-	if span == nil {
-		return
-	}
-	ids[span.SpanID] = struct{}{}
-	for _, child := range span.Children {
-		collectSpanIDs(child, ids)
 	}
 }
 
