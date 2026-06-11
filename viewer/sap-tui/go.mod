@@ -1,6 +1,6 @@
 module github.com/endigma/sap/viewer/sap-tui
 
-go 1.26.3
+go 1.26
 
 require (
 	github.com/alecthomas/chroma/v2 v2.20.0

@@ -166,9 +166,6 @@ func renderAttributes(attrs []*sapv1.Attribute, width int) string {
 			continue
 		}
 		label := attr.GetKey()
-		if attr.GetLabel() != "" {
-			label = attr.GetLabel()
-		}
 		lang := codeLanguage(attr.GetDisplayHints())
 		if lang != "" || hasHint(attr.GetDisplayHints(), "code") {
 			parts = append(parts, labelStyle.Render(label+":")+"\n"+highlightCode(lang, attr.GetValue()))

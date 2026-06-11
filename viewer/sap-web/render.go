@@ -273,16 +273,6 @@ func shortID(id string) string {
 	return id[:8]
 }
 
-func attrLabel(attr *sapv1.Attribute) string {
-	if attr == nil {
-		return ""
-	}
-	if attr.GetLabel() != "" {
-		return attr.GetLabel()
-	}
-	return attr.GetKey()
-}
-
 func attrIsBadge(attr *sapv1.Attribute) bool {
 	return attr != nil && hasHint(attr.GetDisplayHints(), "badge")
 }

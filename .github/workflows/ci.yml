@@ -35,8 +35,14 @@ jobs:
             go vet -C "$dir" ./...
           done
 
-      - name: Test
-        run: go test ./...
+      # In workspace mode ./... still only matches packages of the
+      # current module, so each module is tested explicitly.
+      - name: Test all modules
+        run: |
+          set -euo pipefail
+          for dir in . viewer/sap-tui viewer/sap-web; do
+            go test -C "$dir" ./...
+          done
 
   published:
     name: Build viewers against released sap (GOWORK=off)

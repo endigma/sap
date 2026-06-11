@@ -19,9 +19,8 @@ message Record {
 
 message Attribute {
   string key = 1;
-  string label = 2;
-  string value = 3;
-  repeated string display_hints = 4;
+  string value = 2;
+  repeated string display_hints = 3;
 }
 
 message SpanStarted {

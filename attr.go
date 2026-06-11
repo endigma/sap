@@ -21,16 +21,6 @@ func String(key, value string, hints ...string) *Attribute {
 	}.Build()
 }
 
-// LabeledAttr creates an attribute with a display label and optional display hints.
-func LabeledAttr(key, label, value string, hints ...string) *Attribute {
-	return sapv1.Attribute_builder{
-		Key:          new(key),
-		Label:        new(label),
-		Value:        new(value),
-		DisplayHints: dedupeStrings(hints),
-	}.Build()
-}
-
 // Bool creates a boolean attribute with optional display hints.
 func Bool(key string, value bool, hints ...string) *Attribute {
 	return String(key, strconv.FormatBool(value), hints...)

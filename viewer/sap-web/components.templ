@@ -629,7 +629,7 @@ templ Attributes(ownerKey string, attrs []*sapv1.Attribute) {
 		for i, attr := range attrs {
 			if attr != nil {
 				<div id={ attrDOMID(ownerKey, attr, i) } class={ attrRow(), "anim-enter" }>
-					<div class={ attrLabelClass() }>{ attrLabel(attr) }</div>
+					<div class={ attrLabelClass() }>{ attr.GetKey() }</div>
 					<div class={ attrValueClass() }>
 						if attrIsCode(attr) {
 							<pre class={ codeBlock() }><code class={ codeText() }>@templ.Raw(highlightCodeHTML(codeLanguage(attr.GetDisplayHints()), attr.GetValue()))</code></pre>

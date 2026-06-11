@@ -2227,9 +2227,9 @@ func Attributes(ownerKey string, attrs []*sapv1.Attribute) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var96 string
-				templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(attrLabel(attr))
+				templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(attr.GetKey())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components.templ`, Line: 632, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components.templ`, Line: 632, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var96))
 				if templ_7745c5c3_Err != nil {

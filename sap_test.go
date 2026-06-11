@@ -16,7 +16,7 @@ func TestSpanLifecycle(t *testing.T) {
 	records, cancel := hub.Subscribe(32)
 	defer cancel()
 
-	ctx, root := hub.Start(context.Background(), "root", LabeledAttr("goal", "Goal", "ship it", "text", "text"))
+	ctx, root := hub.Start(context.Background(), "root", String("goal", "ship it", "text"))
 	_, child := hub.Start(ctx, "child", String("step", "one"))
 	root.SetAttributes(String("status", "running", "badge"))
 	root.AddEvent("warn", WithAttributes(String("message", "careful", "text")))

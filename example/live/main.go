@@ -161,9 +161,9 @@ func emitTrace(hub *sap.Hub) {
 
 	ctx, root := hub.Start(
 		context.Background(), "serve request",
-		sap.LabeledAttr("method", "Method", "GET", "badge"),
-		sap.LabeledAttr("route", "Route", "/projects/:id", "badge"),
-		sap.LabeledAttr("query", "Query", "select * from projects where id = $1", "code:sql"),
+		sap.String("method", "GET", "badge"),
+		sap.String("route", "/projects/:id", "badge"),
+		sap.String("query", "select * from projects where id = $1", "code:sql"),
 	)
 	defer root.Complete()
 

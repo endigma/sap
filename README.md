@@ -23,7 +23,7 @@ mise run proto
 hub := sap.NewHub()
 
 ctx, span := hub.Start(context.Background(), "request",
-	 sap.LabeledAttr("route", "Route", "/health", "text"),
+	sap.String("route", "/health", "text"),
 )
 defer span.Complete()
 
@@ -34,20 +34,19 @@ _, child := sap.Start(ctx, "db")
 child.Complete()
 ```
 
-Only the code that constructs the hub needs a `*Hub`: `hub.Start` stores the
-hub in the returned context, so downstream packages start child spans with
-`sap.Start(ctx, ...)`. A context without a span can carry a hub via
-`sap.ContextWithHub`.
+Only the code that constructs the hub holds a `*Hub`: starting a span stores
+the hub in the returned context, so downstream packages start child spans from
+the context alone.
 
-Instrumentation is safe unconditionally. When the context carries no hub,
-`sap.Start` returns an inert span that publishes nothing, and all methods on
-a nil `*Hub` or nil `*Span` (as returned by `sap.FromContext` when absent)
-are no-ops. When attributes are expensive to compute, gate them with
-`span.Recording()`, which is false for nil, inert, and ended spans.
+Instrumentation is safe unconditionally. A context without a hub yields inert
+spans that publish nothing, and nil hubs and spans are valid no-op receivers,
+so instrumented code never needs to check whether monitoring is wired up.
+Spans report whether they are recording, so expensive attributes can be
+skipped when nothing would observe them.
 
 Spans always start at `time.Now()`; back-dating is deliberately unsupported,
-so bracket operations with a span while they run. For events where duration is
-only known after completion, use `span.AddEvent(...)`
+so bracket operations with a span while they run. For moments whose timing is
+only known after the fact, events accept an explicit timestamp.
 
 ```go
 span.AddEvent("tls.handshake_done",
@@ -56,21 +55,14 @@ span.AddEvent("tls.handshake_done",
 )
 ```
 
-Events carry a severity to indicate warnings and failures on a span
-that otherwise keeps running: `sap.WithSeverity(sap.SeverityWarn)` or
-`sap.SeverityError` which the viewers may render highlighted. Events without
-severity or set to `sap.SeverityInfo` are informational.
-
-Attribute values are strings; `sap.String` creates one directly, and
-`sap.Int`, `sap.Int64`, `sap.Float64`, `sap.Bool`, and `sap.Duration`
-format common types. `span.SpanID()` and
-`span.TraceID()` expose the span's identifiers for correlating with other
-tracing or logging systems.
+Events carry a severity to indicate warnings and failures on a span that
+otherwise keeps running; the viewers may render warn and error events
+highlighted. Events without a severity are informational.
 
 ## SSE Endpoint
 
 ```go
-http.Handle("/live", sse.NewHandler(hub))
+http.Handle("/live", sapsse.NewHandler(hub))
 ```
 
 The SSE payload format is protobuf JSON, one record per `data:` frame.

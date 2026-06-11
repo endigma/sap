@@ -399,9 +399,8 @@ func (*record_SpanEvent) isRecord_Kind() {}
 type Attribute struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Key          *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Label        *string                `protobuf:"bytes,2,opt,name=label"`
-	xxx_hidden_Value        *string                `protobuf:"bytes,3,opt,name=value"`
-	xxx_hidden_DisplayHints []string               `protobuf:"bytes,4,rep,name=display_hints,json=displayHints"`
+	xxx_hidden_Value        *string                `protobuf:"bytes,2,opt,name=value"`
+	xxx_hidden_DisplayHints []string               `protobuf:"bytes,3,rep,name=display_hints,json=displayHints"`
 	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
 	XXX_presence            [1]uint32
 	unknownFields           protoimpl.UnknownFields
@@ -443,16 +442,6 @@ func (x *Attribute) GetKey() string {
 	return ""
 }
 
-func (x *Attribute) GetLabel() string {
-	if x != nil {
-		if x.xxx_hidden_Label != nil {
-			return *x.xxx_hidden_Label
-		}
-		return ""
-	}
-	return ""
-}
-
 func (x *Attribute) GetValue() string {
 	if x != nil {
 		if x.xxx_hidden_Value != nil {
@@ -472,17 +461,12 @@ func (x *Attribute) GetDisplayHints() []string {
 
 func (x *Attribute) SetKey(v string) {
 	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
-}
-
-func (x *Attribute) SetLabel(v string) {
-	x.xxx_hidden_Label = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *Attribute) SetValue(v string) {
 	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *Attribute) SetDisplayHints(v []string) {
@@ -496,18 +480,11 @@ func (x *Attribute) HasKey() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *Attribute) HasLabel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
 func (x *Attribute) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Attribute) ClearKey() {
@@ -515,13 +492,8 @@ func (x *Attribute) ClearKey() {
 	x.xxx_hidden_Key = nil
 }
 
-func (x *Attribute) ClearLabel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Label = nil
-}
-
 func (x *Attribute) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Value = nil
 }
 
@@ -529,7 +501,6 @@ type Attribute_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Key          *string
-	Label        *string
 	Value        *string
 	DisplayHints []string
 }
@@ -539,15 +510,11 @@ func (b0 Attribute_builder) Build() *Attribute {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Key = b.Key
 	}
-	if b.Label != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Label = b.Label
-	}
 	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Value = b.Value
 	}
 	x.xxx_hidden_DisplayHints = b.DisplayHints
@@ -1331,12 +1298,11 @@ const file_sap_v1_record_proto_rawDesc = "" +
 	"span_ended\x18\x04 \x01(\v2\x11.sap.v1.SpanEndedH\x00R\tspanEnded\x122\n" +
 	"\n" +
 	"span_event\x18\x05 \x01(\v2\x11.sap.v1.SpanEventH\x00R\tspanEventB\x06\n" +
-	"\x04kind\"n\n" +
+	"\x04kind\"X\n" +
 	"\tAttribute\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05label\x18\x02 \x01(\tR\x05label\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\x12#\n" +
-	"\rdisplay_hints\x18\x04 \x03(\tR\fdisplayHints\"\xe9\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12#\n" +
+	"\rdisplay_hints\x18\x03 \x03(\tR\fdisplayHints\"\xe9\x01\n" +
 	"\vSpanStarted\x12\x19\n" +
 	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
 	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x12$\n" +
