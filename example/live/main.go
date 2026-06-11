@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand/v2"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/endigma/sap"
@@ -151,13 +152,12 @@ func emitNestedChildren(ctx context.Context, hub *sap.Hub, level, maxDepth, fano
 	}
 }
 
-// requestTraceFails alternates request-mode traces between error and
+// requestTraces alternates request-mode traces between error and
 // success endings.
-var requestTraceFails bool
+var requestTraces atomic.Int64
 
 func emitTrace(hub *sap.Hub) {
-	fail := requestTraceFails
-	requestTraceFails = !requestTraceFails
+	fail := requestTraces.Add(1)%2 == 0
 
 	ctx, root := hub.Start(
 		context.Background(), "serve request",
