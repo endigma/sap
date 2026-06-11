@@ -14,6 +14,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// maxFrameBytes caps how large a single SSE line can grow before the client
+// gives up on the stream.
+const maxFrameBytes = 10 * 1024 * 1024
+
 // Stream connects to an SSE endpoint and emits records and connection states.
 func Stream(ctx context.Context, url string) (<-chan RecordMessage, <-chan ConnectionState) {
 	records := make(chan RecordMessage, 256)
@@ -78,6 +82,9 @@ func streamOnce(ctx context.Context, client *http.Client, url string, records ch
 	states <- ConnectionState{State: StateConnected, Attempt: attempt}
 
 	scanner := bufio.NewScanner(resp.Body)
+	// Records with large attribute values (e.g. code blobs) can exceed
+	// bufio.Scanner's 64KB default line limit, which would kill the stream.
+	scanner.Buffer(make([]byte, 0, 64*1024), maxFrameBytes)
 	statesent := false
 	for scanner.Scan() {
 		line := scanner.Text()
