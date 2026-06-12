@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/endigma/sap/compare/v0.2.0...v0.2.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* **deps:** bump sap to v0.2.0 in viewers ([#8](https://github.com/endigma/sap/issues/8)) ([6e557ed](https://github.com/endigma/sap/commit/6e557ed1080269c994857864437ddc2be112ab61))
+
 ## [0.2.0](https://github.com/endigma/sap/compare/v0.1.0...v0.2.0) (2026-06-12)
 
 
