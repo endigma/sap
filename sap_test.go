@@ -235,7 +235,7 @@ func TestNilHub(t *testing.T) {
 	})
 
 	t.Run("publish is a no-op", func(t *testing.T) {
-		hub.Publish(nil)
+		mustReturn(t, func() { hub.Publish(nil) })
 	})
 
 	t.Run("subscribe returns a closed channel", func(t *testing.T) {
@@ -247,7 +247,7 @@ func TestNilHub(t *testing.T) {
 	})
 
 	t.Run("close is a no-op", func(t *testing.T) {
-		hub.Close()
+		mustReturn(t, func() { hub.Close() })
 	})
 }
 
@@ -419,6 +419,25 @@ func TestTypedAttributeHelpers(t *testing.T) {
 			t.Fatalf("display hints = %+v, want [badge]", attr.GetDisplayHints())
 		}
 	})
+}
+
+// mustReturn fails the test when fn panics or does not return within a
+// second, instead of crashing the test binary or hanging silently.
+func mustReturn(t *testing.T, fn func()) {
+	t.Helper()
+	done := make(chan any, 1)
+	go func() {
+		defer func() { done <- recover() }()
+		fn()
+	}()
+	select {
+	case r := <-done:
+		if r != nil {
+			t.Fatalf("panicked: %v", r)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("did not return")
+	}
 }
 
 func drainRecords(ch <-chan *sapv1.Record, want int, timeout time.Duration) []*sapv1.Record {
