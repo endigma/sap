@@ -260,10 +260,12 @@ func TestNilSpan(t *testing.T) {
 
 	t.Run("ignores all method calls", func(t *testing.T) {
 		var span *Span
-		span.SetAttributes(String("k", "v"))
-		span.AddEvent("event")
-		span.Complete()
-		span.Error(errors.New("boom"))
+		mustReturn(t, func() {
+			span.SetAttributes(String("k", "v"))
+			span.AddEvent("event")
+			span.Complete()
+			span.Error(errors.New("boom"))
+		})
 	})
 }
 
