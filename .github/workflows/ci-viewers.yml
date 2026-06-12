@@ -27,6 +27,15 @@ jobs:
       - uses: jdx/mise-action@v3
       - run: mise run '//viewer/...:test'
 
+  lint:
+    name: Lint (viewers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v3
+      - run: mise run '//viewer/...:lint'
+
   published:
     name: Build viewers against released sap (GOWORK=off)
     runs-on: ubuntu-latest
