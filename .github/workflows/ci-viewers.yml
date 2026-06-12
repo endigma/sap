@@ -19,6 +19,7 @@ env:
 
 jobs:
   test:
+    name: Test (viewers)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
