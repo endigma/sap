@@ -208,17 +208,17 @@ func (s *Store) keepClosedSpan(span *SpanState) bool {
 	return true
 }
 
-// LimitRoots keeps only the newest max root spans, discarding older roots and
-// their descendants in FIFO order.
-func (s *Store) LimitRoots(max int) {
-	if max <= 0 {
+// LimitRoots keeps only the newest limit root spans, discarding older roots
+// and their descendants in FIFO order.
+func (s *Store) LimitRoots(limit int) {
+	if limit <= 0 {
 		s.Clear()
 		return
 	}
-	if len(s.roots) <= max {
+	if len(s.roots) <= limit {
 		return
 	}
-	remove := len(s.roots) - max
+	remove := len(s.roots) - limit
 	for _, root := range s.roots[:remove] {
 		s.deleteSpan(root)
 	}
