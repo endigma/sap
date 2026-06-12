@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/endigma/sap/compare/v0.1.0...v0.2.0) (2026-06-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* api improvements ([#4](https://github.com/endigma/sap/issues/4))
+
+### refactor
+
+* api improvements ([#4](https://github.com/endigma/sap/issues/4)) ([e44d025](https://github.com/endigma/sap/commit/e44d02530dacd3c57136214af574113e2274960f))
+
 ## 0.1.0 (2026-05-27)
 
 
