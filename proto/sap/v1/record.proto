@@ -2,10 +2,10 @@ edition = "2024";
 
 package sap.v1;
 
-option go_package = "github.com/endigma/sap/gen/sap/v1;sapv1";
-
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/endigma/sap/gen/sap/v1;sapv1";
 
 message Record {
   google.protobuf.Timestamp emitted_at = 1 [(buf.validate.field).required = true];

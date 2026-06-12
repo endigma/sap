@@ -20,7 +20,7 @@ protoc-gen-go = "latest"
 run = "buf generate"
 
 [tasks.format]
-run = "gofumpt -w ."
+run = ["gofumpt -w .", "buf format -w"]
 
 [tasks.lint]
 run = "golangci-lint run"
