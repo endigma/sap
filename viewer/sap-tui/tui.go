@@ -16,7 +16,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 var errNoTTY = errors.New("monitor: stdout is not a TTY")
@@ -53,29 +53,30 @@ var keys = keyMap{
 	Help:   key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 }
 
-type eventMsg sse.RecordMessage
-type stateMsg sse.ConnectionState
-type repaintMsg struct{}
+type (
+	eventMsg   sapsse.RecordMessage
+	stateMsg   sapsse.ConnectionState
+	repaintMsg struct{}
+)
 
 type model struct {
-	vp               viewport.Model
-	help             help.Model
-	spinner          spinner.Model
-	retryTimer       timer.Model
-	store            *state.Store
-	staleOpenSpanIDs map[string]time.Time
-	renderCache      map[spanRenderCacheKey]string
-	conn             sse.ConnectionState
-	paused           *atomic.Bool
-	width            int
-	height           int
-	ready            bool
-	repaintPending   bool
-	stickToBottom    bool
-	now              time.Time
+	vp             viewport.Model
+	help           help.Model
+	spinner        spinner.Model
+	retryTimer     timer.Model
+	store          *state.Store
+	renderCache    map[spanRenderCacheKey]string
+	conn           sapsse.ConnectionState
+	paused         *atomic.Bool
+	width          int
+	height         int
+	ready          bool
+	repaintPending bool
+	stickToBottom  bool
+	now            time.Time
 }
 
-func run(ctx context.Context, records <-chan sse.RecordMessage, states <-chan sse.ConnectionState, storeOptions state.StoreOptions) error {
+func run(ctx context.Context, records <-chan sapsse.RecordMessage, states <-chan sapsse.ConnectionState, storeOptions state.StoreOptions) error {
 	if !term.IsTerminal(os.Stdout.Fd()) || !term.IsTerminal(os.Stdin.Fd()) {
 		return errNoTTY
 	}
@@ -123,14 +124,13 @@ func newModel(paused *atomic.Bool, storeOptions state.StoreOptions) *model {
 	h := help.New()
 	h.ShortSeparator = " · "
 	return &model{
-		store:            state.NewStoreWithOptions(storeOptions),
-		staleOpenSpanIDs: make(map[string]time.Time),
-		renderCache:      make(map[spanRenderCacheKey]string),
-		spinner:          s,
-		retryTimer:       timer.NewWithInterval(0, 100*time.Millisecond),
-		help:             h,
-		paused:           paused,
-		now:              time.Now(),
+		store:       state.NewStoreWithOptions(storeOptions),
+		renderCache: make(map[spanRenderCacheKey]string),
+		spinner:     s,
+		retryTimer:  timer.NewWithInterval(0, 100*time.Millisecond),
+		help:        h,
+		paused:      paused,
+		now:         time.Now(),
 	}
 }
 
@@ -168,7 +168,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case key.Matches(msg, keys.Clear):
 			m.store.Clear()
-			m.staleOpenSpanIDs = make(map[string]time.Time)
 			m.renderCache = make(map[spanRenderCacheKey]string)
 			m.repaint()
 			return m, nil
@@ -184,7 +183,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 		m.now = time.Now()
-		if m.hasOpenSpans() {
+		if m.store.HasOpenSpans() {
 			m.repaint()
 		}
 		return m, cmd
@@ -198,7 +197,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.store.Apply(msg.Record)
 			m.store.LimitRoots(maxRoots)
-			m.pruneStaleOpenSpanIDs()
 			return m, m.scheduleRepaint()
 		}
 		return m, nil
@@ -211,15 +209,15 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case stateMsg:
-		m.conn = sse.ConnectionState(msg)
+		m.conn = sapsse.ConnectionState(msg)
 		now := time.Now()
 		switch m.conn.State {
-		case sse.StateConnected:
+		case sapsse.StateConnected:
 			m.conn.Err = ""
 			m.repaint()
 			return m, m.retryTimer.Stop()
-		case sse.StateRetrying:
-			m.markOpenSpansStale(now)
+		case sapsse.StateRetrying:
+			m.store.MarkOpenSpansStale(now)
 			remaining := time.Until(m.conn.RetryAt)
 			if remaining < 0 {
 				remaining = 0
@@ -227,8 +225,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.retryTimer = timer.NewWithInterval(remaining.Truncate(time.Second), time.Second)
 			m.repaint()
 			return m, m.retryTimer.Init()
-		case sse.StateDisconnected:
-			m.markOpenSpansStale(now)
+		case sapsse.StateDisconnected:
+			m.store.MarkOpenSpansStale(now)
 			m.repaint()
 			return m, m.retryTimer.Stop()
 		}
@@ -256,9 +254,7 @@ func (m *model) togglePaused() {
 	if !m.isPaused() {
 		m.paused.Store(true)
 		m.store.ClearOpenSpans()
-		m.staleOpenSpanIDs = make(map[string]time.Time)
 		m.renderCache = make(map[spanRenderCacheKey]string)
-		m.pruneStaleOpenSpanIDs()
 		return
 	}
 	m.paused.Store(false)
@@ -272,7 +268,7 @@ func (m *model) repaint() {
 	if !m.ready {
 		return
 	}
-	m.vp.SetContent(renderRoots(m.store.Roots(), max(40, m.width-2), m.spinner.View(), m.now, m.staleOpenSpanIDs, m.renderCache))
+	m.vp.SetContent(renderRoots(m.store.Roots(), max(40, m.width-2), m.spinner.View(), m.now, m.store.StaleOpenSpanIDs(), m.renderCache))
 }
 
 func (m *model) scheduleRepaint() tea.Cmd {
@@ -283,80 +279,4 @@ func (m *model) scheduleRepaint() tea.Cmd {
 	return tea.Tick(33*time.Millisecond, func(time.Time) tea.Msg {
 		return repaintMsg{}
 	})
-}
-
-func (m *model) markOpenSpansStale(at time.Time) {
-	for _, root := range m.store.Roots() {
-		markOpenSpanStale(root, at, m.staleOpenSpanIDs)
-	}
-}
-
-func markOpenSpanStale(span *state.SpanState, at time.Time, stale map[string]time.Time) {
-	if span == nil {
-		return
-	}
-	if !span.Ended {
-		if _, ok := stale[span.SpanID]; !ok {
-			stale[span.SpanID] = at
-		}
-	}
-	for _, child := range span.Children {
-		markOpenSpanStale(child, at, stale)
-	}
-}
-
-func (m *model) pruneStaleOpenSpanIDs() {
-	if len(m.staleOpenSpanIDs) == 0 {
-		return
-	}
-	current := make(map[string]struct{})
-	for _, root := range m.store.Roots() {
-		collectSpanIDs(root, current)
-	}
-	for spanID := range m.staleOpenSpanIDs {
-		if _, ok := current[spanID]; !ok {
-			delete(m.staleOpenSpanIDs, spanID)
-		}
-	}
-}
-
-func collectSpanIDs(span *state.SpanState, ids map[string]struct{}) {
-	if span == nil {
-		return
-	}
-	ids[span.SpanID] = struct{}{}
-	for _, child := range span.Children {
-		collectSpanIDs(child, ids)
-	}
-}
-
-func (m *model) hasOpenSpans() bool {
-	for _, root := range m.store.Roots() {
-		if hasOpenSpan(root) {
-			return true
-		}
-	}
-	return false
-}
-
-func hasOpenSpan(span *state.SpanState) bool {
-	if span == nil {
-		return false
-	}
-	if !span.Ended {
-		return true
-	}
-	for _, child := range span.Children {
-		if hasOpenSpan(child) {
-			return true
-		}
-	}
-	return false
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

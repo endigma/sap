@@ -1,5 +1,7 @@
-module github.com/endigma/sap/viewer/web
+module github.com/endigma/sap/viewer/sap-web
 
+// go >= 1.26.3 is forced by the released sap v0.1.0 dependency; go mod tidy
+// restores it if lowered, and go.work must list at least this version.
 go 1.26.3
 
 require (

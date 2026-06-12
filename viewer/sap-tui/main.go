@@ -1,3 +1,4 @@
+// The sap-tui command renders a live terminal viewer for sap records.
 package main
 
 import (
@@ -7,7 +8,7 @@ import (
 	"os"
 
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 	flag.Parse()
 
 	ctx := context.Background()
-	records, states := sse.Stream(ctx, *url)
+	records, states := sapsse.Stream(ctx, *url)
 	storeOptions := state.StoreOptions{AllowUnknownParents: *allowUnknownParents}
 	if err := run(ctx, records, states, storeOptions); err != nil {
 		fmt.Fprintln(os.Stderr, err)

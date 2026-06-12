@@ -1,5 +1,5 @@
 # Local Go build artifacts
 /sap
-/viewer/tui/tui
-/viewer/web/web
+/viewer/sap-tui/sap-tui
+/viewer/sap-web/sap-web
 /dist/

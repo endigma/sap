@@ -7,6 +7,9 @@ import (
 )
 
 // Hub fans out emitted records to in-process subscribers.
+// All methods are safe to call on a nil *Hub: it behaves like a closed hub,
+// so Publish and Close are no-ops, Subscribe returns a closed channel, and
+// Start returns an inert span.
 type Hub struct {
 	mu     sync.RWMutex
 	subs   map[chan *sapv1.Record]struct{}
@@ -24,6 +27,10 @@ func (h *Hub) Subscribe(buffer int) (<-chan *sapv1.Record, func()) {
 		buffer = 256
 	}
 	ch := make(chan *sapv1.Record, buffer)
+	if h == nil {
+		close(ch)
+		return ch, func() {}
+	}
 	h.mu.Lock()
 	if h.closed {
 		h.mu.Unlock()
@@ -44,6 +51,9 @@ func (h *Hub) Subscribe(buffer int) (<-chan *sapv1.Record, func()) {
 
 // Publish sends record to all active subscribers without blocking slow subscribers.
 func (h *Hub) Publish(record *sapv1.Record) {
+	if h == nil {
+		return
+	}
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	if h.closed {
@@ -59,6 +69,9 @@ func (h *Hub) Publish(record *sapv1.Record) {
 
 // Close closes the hub and all active subscriber channels.
 func (h *Hub) Close() {
+	if h == nil {
+		return
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.closed {

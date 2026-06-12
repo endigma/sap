@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	sapv1 "github.com/endigma/sap/gen/sap/v1"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 var (
@@ -22,13 +22,14 @@ var (
 	okStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("78")).Bold(true)
 	errStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("203")).Bold(true)
 	runStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Bold(true)
+	warnStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Bold(true)
 )
 
 func renderHeader(width int) string {
 	return headerStyle.Width(width).Render(" sap · live monitor ")
 }
 
-func renderFooter(width, roots int, conn sse.ConnectionState, retry timer.Model, paused bool, helpView string) string {
+func renderFooter(width, roots int, conn sapsse.ConnectionState, retry timer.Model, paused bool, helpView string) string {
 	separator := footerSeparator.Render(" · ")
 	left := footerItem("roots", fmt.Sprintf("%d", roots)) + separator + connectionStatus(conn, retry)
 	if paused {
@@ -46,13 +47,13 @@ func footerItem(key, desc string) string {
 	return footerKey.Render(key) + " " + footerDesc.Render(desc)
 }
 
-func connectionStatus(conn sse.ConnectionState, retry timer.Model) string {
+func connectionStatus(conn sapsse.ConnectionState, retry timer.Model) string {
 	switch conn.State {
-	case sse.StateConnected:
+	case sapsse.StateConnected:
 		return okStyle.Render("●")
-	case sse.StateConnecting:
+	case sapsse.StateConnecting:
 		return runStyle.Render("●")
-	case sse.StateRetrying:
+	case sapsse.StateRetrying:
 		return runStyle.Render("●") + " " + footerDesc.Render(retry.View())
 	default:
 		return dimStyle.Render("●")
@@ -104,12 +105,23 @@ func renderSpan(span *state.SpanState, depth, width int, spin string, now time.T
 	if attrs != "" {
 		parts = append(parts, dimStyle.Render(strings.Repeat("─", inner)), attrs)
 	}
-	if events := renderEvents(span.Events, inner, span.StartedAt); events != "" {
-		parts = append(parts, dimStyle.Render(strings.Repeat("─", inner)), events)
+	var eventGroup []*state.EventState
+	flushEvents := func() {
+		if len(eventGroup) == 0 {
+			return
+		}
+		parts = append(parts, dimStyle.Render(strings.Repeat("─", inner)), renderEvents(eventGroup, inner, span.StartedAt))
+		eventGroup = nil
 	}
-	for _, child := range span.Children {
-		parts = append(parts, renderSpan(child, depth+1, inner, spin, now, staleOpenSpanIDs, cache))
+	for _, item := range state.TimelineItems(span) {
+		if item.Event != nil {
+			eventGroup = append(eventGroup, item.Event)
+			continue
+		}
+		flushEvents()
+		parts = append(parts, renderSpan(item.Span, depth+1, inner, spin, now, staleOpenSpanIDs, cache))
 	}
+	flushEvents()
 	rendered := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(color).Padding(0, 1).Width(width - 2).Render(strings.Join(parts, "\n"))
 	if cacheable && cache != nil {
 		key := spanRenderCacheKey{spanID: span.SpanID, depth: depth, width: width}
@@ -154,9 +166,6 @@ func renderAttributes(attrs []*sapv1.Attribute, width int) string {
 			continue
 		}
 		label := attr.GetKey()
-		if attr.GetLabel() != "" {
-			label = attr.GetLabel()
-		}
 		lang := codeLanguage(attr.GetDisplayHints())
 		if lang != "" || hasHint(attr.GetDisplayHints(), "code") {
 			parts = append(parts, labelStyle.Render(label+":")+"\n"+highlightCode(lang, attr.GetValue()))
@@ -171,6 +180,12 @@ func renderEvents(events []*state.EventState, width int, startedAt time.Time) st
 	var parts []string
 	for _, event := range events {
 		headerLeft := dimStyle.Render("* ") + event.Name
+		switch event.Severity {
+		case sapv1.SpanEvent_SEVERITY_WARN:
+			headerLeft = warnStyle.Render("* ") + warnStyle.Render(event.Name)
+		case sapv1.SpanEvent_SEVERITY_ERROR:
+			headerLeft = errStyle.Render("* ") + errStyle.Render(event.Name)
+		}
 		header := headerLeft
 		if offset := eventOffset(startedAt, event.At); offset != "" {
 			headerRight := dimStyle.Render(offset)
@@ -236,17 +251,6 @@ func formatDuration(d time.Duration) string {
 		return d.Round(100 * time.Millisecond).String()
 	}
 	return d.Round(time.Second).String()
-}
-
-func inlineAttrs(attrs []*sapv1.Attribute) string {
-	parts := make([]string, 0, len(attrs))
-	for _, attr := range attrs {
-		if attr == nil {
-			continue
-		}
-		parts = append(parts, fmt.Sprintf("%s=%s", attr.GetKey(), attr.GetValue()))
-	}
-	return strings.Join(parts, " ")
 }
 
 func hasHint(hints []string, want string) bool {

@@ -1,3 +1,4 @@
+// The sap-web command serves a live web viewer for sap records.
 package main
 
 import (
@@ -13,10 +14,16 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/endigma/sap/state"
-	"github.com/endigma/sap/transport/sse"
+	"github.com/endigma/sap/transport/sapsse"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	addr := flag.String("addr", "127.0.0.1:8090", "HTTP address for the web viewer")
 	url := flag.String("url", "http://127.0.0.1:8080/live", "Sap SSE endpoint URL")
 	maxRoots := flag.Int("roots", 50, "maximum root spans to retain")
@@ -26,7 +33,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	records, states := sse.Stream(ctx, *url)
+	records, states := sapsse.Stream(ctx, *url)
 	storeOptions := state.StoreOptions{AllowUnknownParents: *allowUnknownParents}
 	viewer := newServer(*maxRoots, storeOptions)
 	viewer.start(ctx, records, states)
@@ -52,6 +59,7 @@ func main() {
 
 	log.Printf("sap web viewer listening on http://%s and reading %s", *addr, *url)
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }

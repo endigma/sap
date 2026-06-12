@@ -1,0 +1,5 @@
+[tasks.lint]
+run = "golangci-lint run"
+
+[tasks.test]
+run = "gotestsum -- ./..."

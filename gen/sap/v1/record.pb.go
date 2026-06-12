@@ -65,6 +65,53 @@ func (x SpanEnded_TerminalType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+type SpanEvent_Severity int32
+
+const (
+	SpanEvent_SEVERITY_UNSPECIFIED SpanEvent_Severity = 0
+	SpanEvent_SEVERITY_INFO        SpanEvent_Severity = 1
+	SpanEvent_SEVERITY_WARN        SpanEvent_Severity = 2
+	SpanEvent_SEVERITY_ERROR       SpanEvent_Severity = 3
+)
+
+// Enum value maps for SpanEvent_Severity.
+var (
+	SpanEvent_Severity_name = map[int32]string{
+		0: "SEVERITY_UNSPECIFIED",
+		1: "SEVERITY_INFO",
+		2: "SEVERITY_WARN",
+		3: "SEVERITY_ERROR",
+	}
+	SpanEvent_Severity_value = map[string]int32{
+		"SEVERITY_UNSPECIFIED": 0,
+		"SEVERITY_INFO":        1,
+		"SEVERITY_WARN":        2,
+		"SEVERITY_ERROR":       3,
+	}
+)
+
+func (x SpanEvent_Severity) Enum() *SpanEvent_Severity {
+	p := new(SpanEvent_Severity)
+	*p = x
+	return p
+}
+
+func (x SpanEvent_Severity) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SpanEvent_Severity) Descriptor() protoreflect.EnumDescriptor {
+	return file_sap_v1_record_proto_enumTypes[1].Descriptor()
+}
+
+func (SpanEvent_Severity) Type() protoreflect.EnumType {
+	return &file_sap_v1_record_proto_enumTypes[1]
+}
+
+func (x SpanEvent_Severity) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type Record struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_EmittedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=emitted_at,json=emittedAt"`
@@ -352,9 +399,8 @@ func (*record_SpanEvent) isRecord_Kind() {}
 type Attribute struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Key          *string                `protobuf:"bytes,1,opt,name=key"`
-	xxx_hidden_Label        *string                `protobuf:"bytes,2,opt,name=label"`
-	xxx_hidden_Value        *string                `protobuf:"bytes,3,opt,name=value"`
-	xxx_hidden_DisplayHints []string               `protobuf:"bytes,4,rep,name=display_hints,json=displayHints"`
+	xxx_hidden_Value        *string                `protobuf:"bytes,2,opt,name=value"`
+	xxx_hidden_DisplayHints []string               `protobuf:"bytes,3,rep,name=display_hints,json=displayHints"`
 	XXX_raceDetectHookData  protoimpl.RaceDetectHookData
 	XXX_presence            [1]uint32
 	unknownFields           protoimpl.UnknownFields
@@ -396,16 +442,6 @@ func (x *Attribute) GetKey() string {
 	return ""
 }
 
-func (x *Attribute) GetLabel() string {
-	if x != nil {
-		if x.xxx_hidden_Label != nil {
-			return *x.xxx_hidden_Label
-		}
-		return ""
-	}
-	return ""
-}
-
 func (x *Attribute) GetValue() string {
 	if x != nil {
 		if x.xxx_hidden_Value != nil {
@@ -425,17 +461,12 @@ func (x *Attribute) GetDisplayHints() []string {
 
 func (x *Attribute) SetKey(v string) {
 	x.xxx_hidden_Key = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
-}
-
-func (x *Attribute) SetLabel(v string) {
-	x.xxx_hidden_Label = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 4)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 3)
 }
 
 func (x *Attribute) SetValue(v string) {
 	x.xxx_hidden_Value = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 4)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 3)
 }
 
 func (x *Attribute) SetDisplayHints(v []string) {
@@ -449,18 +480,11 @@ func (x *Attribute) HasKey() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *Attribute) HasLabel() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
 func (x *Attribute) HasValue() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *Attribute) ClearKey() {
@@ -468,13 +492,8 @@ func (x *Attribute) ClearKey() {
 	x.xxx_hidden_Key = nil
 }
 
-func (x *Attribute) ClearLabel() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Label = nil
-}
-
 func (x *Attribute) ClearValue() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Value = nil
 }
 
@@ -482,7 +501,6 @@ type Attribute_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Key          *string
-	Label        *string
 	Value        *string
 	DisplayHints []string
 }
@@ -492,15 +510,11 @@ func (b0 Attribute_builder) Build() *Attribute {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Key != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 3)
 		x.xxx_hidden_Key = b.Key
 	}
-	if b.Label != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 4)
-		x.xxx_hidden_Label = b.Label
-	}
 	if b.Value != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 4)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 3)
 		x.xxx_hidden_Value = b.Value
 	}
 	x.xxx_hidden_DisplayHints = b.DisplayHints
@@ -1060,11 +1074,17 @@ type SpanEvent struct {
 	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
 	xxx_hidden_EventAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=event_at,json=eventAt"`
 	xxx_hidden_Attributes  *[]*Attribute          `protobuf:"bytes,5,rep,name=attributes"`
+	xxx_hidden_Severity    SpanEvent_Severity     `protobuf:"varint,6,opt,name=severity,enum=sap.v1.SpanEvent_Severity,def=1"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
+
+// Default values for SpanEvent fields.
+const (
+	Default_SpanEvent_Severity = SpanEvent_SEVERITY_INFO
+)
 
 func (x *SpanEvent) Reset() {
 	*x = SpanEvent{}
@@ -1137,19 +1157,28 @@ func (x *SpanEvent) GetAttributes() []*Attribute {
 	return nil
 }
 
+func (x *SpanEvent) GetSeverity() SpanEvent_Severity {
+	if x != nil {
+		if protoimpl.X.Present(&(x.XXX_presence[0]), 5) {
+			return x.xxx_hidden_Severity
+		}
+	}
+	return Default_SpanEvent_Severity
+}
+
 func (x *SpanEvent) SetTraceId(v string) {
 	x.xxx_hidden_TraceId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 6)
 }
 
 func (x *SpanEvent) SetSpanId(v string) {
 	x.xxx_hidden_SpanId = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *SpanEvent) SetName(v string) {
 	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *SpanEvent) SetEventAt(v *timestamppb.Timestamp) {
@@ -1158,6 +1187,11 @@ func (x *SpanEvent) SetEventAt(v *timestamppb.Timestamp) {
 
 func (x *SpanEvent) SetAttributes(v []*Attribute) {
 	x.xxx_hidden_Attributes = &v
+}
+
+func (x *SpanEvent) SetSeverity(v SpanEvent_Severity) {
+	x.xxx_hidden_Severity = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *SpanEvent) HasTraceId() bool {
@@ -1188,6 +1222,13 @@ func (x *SpanEvent) HasEventAt() bool {
 	return x.xxx_hidden_EventAt != nil
 }
 
+func (x *SpanEvent) HasSeverity() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
 func (x *SpanEvent) ClearTraceId() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_TraceId = nil
@@ -1207,6 +1248,10 @@ func (x *SpanEvent) ClearEventAt() {
 	x.xxx_hidden_EventAt = nil
 }
 
+func (x *SpanEvent) ClearSeverity() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+}
+
 type SpanEvent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -1215,6 +1260,7 @@ type SpanEvent_builder struct {
 	Name       *string
 	EventAt    *timestamppb.Timestamp
 	Attributes []*Attribute
+	Severity   *SpanEvent_Severity
 }
 
 func (b0 SpanEvent_builder) Build() *SpanEvent {
@@ -1222,19 +1268,23 @@ func (b0 SpanEvent_builder) Build() *SpanEvent {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.TraceId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 6)
 		x.xxx_hidden_TraceId = b.TraceId
 	}
 	if b.SpanId != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
 		x.xxx_hidden_SpanId = b.SpanId
 	}
 	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_Name = b.Name
 	}
 	x.xxx_hidden_EventAt = b.EventAt
 	x.xxx_hidden_Attributes = &b.Attributes
+	if b.Severity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_Severity = *b.Severity
+	}
 	return m0
 }
 
@@ -1252,12 +1302,11 @@ const file_sap_v1_record_proto_rawDesc = "" +
 	"span_ended\x18\x04 \x01(\v2\x11.sap.v1.SpanEndedH\x00R\tspanEnded\x122\n" +
 	"\n" +
 	"span_event\x18\x05 \x01(\v2\x11.sap.v1.SpanEventH\x00R\tspanEventB\x06\n" +
-	"\x04kind\"n\n" +
+	"\x04kind\"X\n" +
 	"\tAttribute\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05label\x18\x02 \x01(\tR\x05label\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\x12#\n" +
-	"\rdisplay_hints\x18\x04 \x03(\tR\fdisplayHints\"\xe9\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12#\n" +
+	"\rdisplay_hints\x18\x03 \x03(\tR\fdisplayHints\"\xe9\x01\n" +
 	"\vSpanStarted\x12\x19\n" +
 	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
 	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x12$\n" +
@@ -1283,7 +1332,7 @@ const file_sap_v1_record_proto_rawDesc = "" +
 	"\fTerminalType\x12\x1d\n" +
 	"\x19TERMINAL_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16TERMINAL_TYPE_COMPLETE\x10\x01\x12\x17\n" +
-	"\x13TERMINAL_TYPE_ERROR\x10\x02\"\xbd\x01\n" +
+	"\x13TERMINAL_TYPE_ERROR\x10\x02\"\xe4\x02\n" +
 	"\tSpanEvent\x12\x19\n" +
 	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
 	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x12\x12\n" +
@@ -1291,38 +1340,46 @@ const file_sap_v1_record_proto_rawDesc = "" +
 	"\bevent_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aeventAt\x121\n" +
 	"\n" +
 	"attributes\x18\x05 \x03(\v2\x11.sap.v1.AttributeR\n" +
-	"attributesB)Z'github.com/endigma/sap/gen/sap/v1;sapv1b\beditionsp\xe9\a"
+	"attributes\x12E\n" +
+	"\bseverity\x18\x06 \x01(\x0e2\x1a.sap.v1.SpanEvent.Severity:\rSEVERITY_INFOR\bseverity\"^\n" +
+	"\bSeverity\x12\x18\n" +
+	"\x14SEVERITY_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rSEVERITY_INFO\x10\x01\x12\x11\n" +
+	"\rSEVERITY_WARN\x10\x02\x12\x12\n" +
+	"\x0eSEVERITY_ERROR\x10\x03B)Z'github.com/endigma/sap/gen/sap/v1;sapv1b\beditionsp\xe9\a"
 
-var file_sap_v1_record_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_sap_v1_record_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_sap_v1_record_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_sap_v1_record_proto_goTypes = []any{
 	(SpanEnded_TerminalType)(0),   // 0: sap.v1.SpanEnded.TerminalType
-	(*Record)(nil),                // 1: sap.v1.Record
-	(*Attribute)(nil),             // 2: sap.v1.Attribute
-	(*SpanStarted)(nil),           // 3: sap.v1.SpanStarted
-	(*SpanUpdated)(nil),           // 4: sap.v1.SpanUpdated
-	(*SpanEnded)(nil),             // 5: sap.v1.SpanEnded
-	(*SpanEvent)(nil),             // 6: sap.v1.SpanEvent
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(SpanEvent_Severity)(0),       // 1: sap.v1.SpanEvent.Severity
+	(*Record)(nil),                // 2: sap.v1.Record
+	(*Attribute)(nil),             // 3: sap.v1.Attribute
+	(*SpanStarted)(nil),           // 4: sap.v1.SpanStarted
+	(*SpanUpdated)(nil),           // 5: sap.v1.SpanUpdated
+	(*SpanEnded)(nil),             // 6: sap.v1.SpanEnded
+	(*SpanEvent)(nil),             // 7: sap.v1.SpanEvent
+	(*timestamppb.Timestamp)(nil), // 8: google.protobuf.Timestamp
 }
 var file_sap_v1_record_proto_depIdxs = []int32{
-	7,  // 0: sap.v1.Record.emitted_at:type_name -> google.protobuf.Timestamp
-	3,  // 1: sap.v1.Record.span_started:type_name -> sap.v1.SpanStarted
-	4,  // 2: sap.v1.Record.span_updated:type_name -> sap.v1.SpanUpdated
-	5,  // 3: sap.v1.Record.span_ended:type_name -> sap.v1.SpanEnded
-	6,  // 4: sap.v1.Record.span_event:type_name -> sap.v1.SpanEvent
-	7,  // 5: sap.v1.SpanStarted.started_at:type_name -> google.protobuf.Timestamp
-	2,  // 6: sap.v1.SpanStarted.attributes:type_name -> sap.v1.Attribute
-	2,  // 7: sap.v1.SpanUpdated.attributes:type_name -> sap.v1.Attribute
-	7,  // 8: sap.v1.SpanEnded.ended_at:type_name -> google.protobuf.Timestamp
+	8,  // 0: sap.v1.Record.emitted_at:type_name -> google.protobuf.Timestamp
+	4,  // 1: sap.v1.Record.span_started:type_name -> sap.v1.SpanStarted
+	5,  // 2: sap.v1.Record.span_updated:type_name -> sap.v1.SpanUpdated
+	6,  // 3: sap.v1.Record.span_ended:type_name -> sap.v1.SpanEnded
+	7,  // 4: sap.v1.Record.span_event:type_name -> sap.v1.SpanEvent
+	8,  // 5: sap.v1.SpanStarted.started_at:type_name -> google.protobuf.Timestamp
+	3,  // 6: sap.v1.SpanStarted.attributes:type_name -> sap.v1.Attribute
+	3,  // 7: sap.v1.SpanUpdated.attributes:type_name -> sap.v1.Attribute
+	8,  // 8: sap.v1.SpanEnded.ended_at:type_name -> google.protobuf.Timestamp
 	0,  // 9: sap.v1.SpanEnded.terminal_type:type_name -> sap.v1.SpanEnded.TerminalType
-	7,  // 10: sap.v1.SpanEvent.event_at:type_name -> google.protobuf.Timestamp
-	2,  // 11: sap.v1.SpanEvent.attributes:type_name -> sap.v1.Attribute
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	8,  // 10: sap.v1.SpanEvent.event_at:type_name -> google.protobuf.Timestamp
+	3,  // 11: sap.v1.SpanEvent.attributes:type_name -> sap.v1.Attribute
+	1,  // 12: sap.v1.SpanEvent.severity:type_name -> sap.v1.SpanEvent.Severity
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_sap_v1_record_proto_init() }
@@ -1341,7 +1398,7 @@ func file_sap_v1_record_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sap_v1_record_proto_rawDesc), len(file_sap_v1_record_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,

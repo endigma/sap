@@ -2,9 +2,9 @@ edition = "2024";
 
 package sap.v1;
 
-option go_package = "github.com/endigma/sap/gen/sap/v1;sapv1";
-
 import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/endigma/sap/gen/sap/v1;sapv1";
 
 message Record {
   google.protobuf.Timestamp emitted_at = 1;
@@ -19,9 +19,8 @@ message Record {
 
 message Attribute {
   string key = 1;
-  string label = 2;
-  string value = 3;
-  repeated string display_hints = 4;
+  string value = 2;
+  repeated string display_hints = 3;
 }
 
 message SpanStarted {
@@ -54,9 +53,17 @@ message SpanEnded {
 }
 
 message SpanEvent {
+  enum Severity {
+    SEVERITY_UNSPECIFIED = 0;
+    SEVERITY_INFO = 1;
+    SEVERITY_WARN = 2;
+    SEVERITY_ERROR = 3;
+  }
+
   string trace_id = 1;
   string span_id = 2;
   string name = 3;
   google.protobuf.Timestamp event_at = 4;
   repeated Attribute attributes = 5;
+  Severity severity = 6 [default = SEVERITY_INFO];
 }

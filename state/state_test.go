@@ -122,7 +122,7 @@ func TestStoreReconstructsAndClears(t *testing.T) {
 	store.Apply(sapv1.Record_builder{SpanStarted: sapv1.SpanStarted_builder{TraceId: new("trace-1"), SpanId: new("root"), Name: new("root"), StartedAt: timestamppb.New(startedAt), Attributes: []*sapv1.Attribute{sapv1.Attribute_builder{Key: new("goal"), Value: new("ship")}.Build()}}.Build()}.Build())
 	store.Apply(sapv1.Record_builder{SpanStarted: sapv1.SpanStarted_builder{TraceId: new("trace-1"), SpanId: new("child"), ParentSpanId: new("root"), Name: new("child")}.Build()}.Build())
 	store.Apply(sapv1.Record_builder{SpanUpdated: sapv1.SpanUpdated_builder{TraceId: new("trace-1"), SpanId: new("root"), Attributes: []*sapv1.Attribute{sapv1.Attribute_builder{Key: new("goal"), Value: new("ship now")}.Build(), sapv1.Attribute_builder{Key: new("status"), Value: new("running")}.Build()}}.Build()}.Build())
-	store.Apply(sapv1.Record_builder{SpanEvent: sapv1.SpanEvent_builder{TraceId: new("trace-1"), SpanId: new("root"), Name: new("warn"), EventAt: timestamppb.New(eventAt)}.Build()}.Build())
+	store.Apply(sapv1.Record_builder{SpanEvent: sapv1.SpanEvent_builder{TraceId: new("trace-1"), SpanId: new("root"), Name: new("warn"), EventAt: timestamppb.New(eventAt), Severity: sapv1.SpanEvent_SEVERITY_WARN.Enum()}.Build()}.Build())
 	store.Apply(sapv1.Record_builder{SpanEnded: sapv1.SpanEnded_builder{TraceId: new("trace-1"), SpanId: new("root"), EndedAt: timestamppb.New(endedAt), TerminalType: sapv1.SpanEnded_TERMINAL_TYPE_COMPLETE.Enum()}.Build()}.Build())
 	store.Apply(sapv1.Record_builder{SpanEvent: sapv1.SpanEvent_builder{TraceId: new("trace-1"), SpanId: new("root"), Name: new("ignored")}.Build()}.Build())
 
@@ -137,7 +137,7 @@ func TestStoreReconstructsAndClears(t *testing.T) {
 	if len(root.Attributes) != 2 || root.Attributes[0].GetValue() != "ship now" || root.Attributes[1].GetKey() != "status" {
 		t.Fatalf("attributes = %+v", root.Attributes)
 	}
-	if len(root.Events) != 1 || root.Events[0].Name != "warn" {
+	if len(root.Events) != 1 || root.Events[0].Name != "warn" || root.Events[0].Severity != sapv1.SpanEvent_SEVERITY_WARN {
 		t.Fatalf("events = %+v", root.Events)
 	}
 	if !root.StartedAt.Equal(startedAt) || !root.EndedAt.Equal(endedAt) || !root.Events[0].At.Equal(eventAt) {
@@ -151,4 +151,87 @@ func TestStoreReconstructsAndClears(t *testing.T) {
 	if len(store.Roots()) != 0 {
 		t.Fatalf("roots after Clear = %+v", store.Roots())
 	}
+}
+
+func TestStoreStaleTracking(t *testing.T) {
+	start := func(store *Store, spanID, parentID string) {
+		builder := sapv1.SpanStarted_builder{TraceId: new("trace-1"), SpanId: &spanID, Name: &spanID}
+		if parentID != "" {
+			builder.ParentSpanId = &parentID
+		}
+		store.Apply(sapv1.Record_builder{SpanStarted: builder.Build()}.Build())
+	}
+	end := func(store *Store, spanID string) {
+		store.Apply(sapv1.Record_builder{SpanEnded: sapv1.SpanEnded_builder{TraceId: new("trace-1"), SpanId: &spanID, EndedAt: timestamppb.New(time.Now())}.Build()}.Build())
+	}
+
+	t.Run("marks only open spans and keeps the earliest time", func(t *testing.T) {
+		store := NewStore()
+		start(store, "root", "")
+		start(store, "open-child", "root")
+		start(store, "closed-child", "root")
+		end(store, "closed-child")
+
+		first := time.Now()
+		store.MarkOpenSpansStale(first)
+		store.MarkOpenSpansStale(first.Add(time.Minute))
+
+		stale := store.StaleOpenSpanIDs()
+		if len(stale) != 2 {
+			t.Fatalf("stale = %+v, want root and open-child", stale)
+		}
+		if at, ok := stale["open-child"]; !ok || !at.Equal(first) {
+			t.Fatalf("open-child stale at %v, want %v", at, first)
+		}
+		if _, ok := stale["closed-child"]; ok {
+			t.Fatal("closed span was marked stale")
+		}
+	})
+
+	t.Run("drops marks when spans leave the store", func(t *testing.T) {
+		store := NewStore()
+		start(store, "old-root", "")
+		store.MarkOpenSpansStale(time.Now())
+		start(store, "new-root", "")
+		store.LimitRoots(1)
+		if len(store.StaleOpenSpanIDs()) != 0 {
+			t.Fatalf("stale = %+v, want empty after eviction", store.StaleOpenSpanIDs())
+		}
+	})
+}
+
+func TestStoreFindSpan(t *testing.T) {
+	t.Run("returns the span and its depth", func(t *testing.T) {
+		store := NewStore()
+		rootID, childID := "root", "child"
+		store.Apply(sapv1.Record_builder{SpanStarted: sapv1.SpanStarted_builder{TraceId: new("trace-1"), SpanId: &rootID, Name: &rootID}.Build()}.Build())
+		store.Apply(sapv1.Record_builder{SpanStarted: sapv1.SpanStarted_builder{TraceId: new("trace-1"), SpanId: &childID, ParentSpanId: &rootID, Name: &childID}.Build()}.Build())
+
+		span, depth := store.FindSpan("child")
+		if span == nil || span.SpanID != "child" || depth != 1 {
+			t.Fatalf("FindSpan = %+v depth %d, want child at depth 1", span, depth)
+		}
+	})
+
+	t.Run("returns nil for an unknown ID", func(t *testing.T) {
+		span, _ := NewStore().FindSpan("missing")
+		if span != nil {
+			t.Fatalf("FindSpan = %+v, want nil", span)
+		}
+	})
+}
+
+func TestStoreHasOpenSpans(t *testing.T) {
+	t.Run("is true while any span is in progress and false after it ends", func(t *testing.T) {
+		store := NewStore()
+		spanID := "root"
+		store.Apply(sapv1.Record_builder{SpanStarted: sapv1.SpanStarted_builder{TraceId: new("trace-1"), SpanId: &spanID, Name: &spanID}.Build()}.Build())
+		if !store.HasOpenSpans() {
+			t.Fatal("open span not reported")
+		}
+		store.Apply(sapv1.Record_builder{SpanEnded: sapv1.SpanEnded_builder{TraceId: new("trace-1"), SpanId: &spanID, EndedAt: timestamppb.New(time.Now())}.Build()}.Build())
+		if store.HasOpenSpans() {
+			t.Fatal("ended span reported as open")
+		}
+	})
 }
