@@ -7,6 +7,7 @@
 package sapv1
 
 import (
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -1288,56 +1289,67 @@ var File_sap_v1_record_proto protoreflect.FileDescriptor
 
 const file_sap_v1_record_proto_rawDesc = "" +
 	"\n" +
-	"\x13sap/v1/record.proto\x12\x06sap.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa7\x02\n" +
-	"\x06Record\x129\n" +
+	"\x13sap/v1/record.proto\x12\x06sap.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x02\n" +
+	"\x06Record\x12A\n" +
 	"\n" +
-	"emitted_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\temittedAt\x128\n" +
+	"emitted_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xc8\x01\x01R\temittedAt\x128\n" +
 	"\fspan_started\x18\x02 \x01(\v2\x13.sap.v1.SpanStartedH\x00R\vspanStarted\x128\n" +
 	"\fspan_updated\x18\x03 \x01(\v2\x13.sap.v1.SpanUpdatedH\x00R\vspanUpdated\x122\n" +
 	"\n" +
 	"span_ended\x18\x04 \x01(\v2\x11.sap.v1.SpanEndedH\x00R\tspanEnded\x122\n" +
 	"\n" +
-	"span_event\x18\x05 \x01(\v2\x11.sap.v1.SpanEventH\x00R\tspanEventB\x06\n" +
-	"\x04kind\"X\n" +
-	"\tAttribute\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\x12#\n" +
-	"\rdisplay_hints\x18\x03 \x03(\tR\fdisplayHints\"\xe9\x01\n" +
-	"\vSpanStarted\x12\x19\n" +
-	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
-	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x12$\n" +
-	"\x0eparent_span_id\x18\x03 \x01(\tR\fparentSpanId\x12\x12\n" +
-	"\x04name\x18\x04 \x01(\tR\x04name\x129\n" +
+	"span_event\x18\x05 \x01(\v2\x11.sap.v1.SpanEventH\x00R\tspanEventB\r\n" +
+	"\x04kind\x12\x05\xbaH\x02\b\x01\"r\n" +
+	"\tAttribute\x12\x1c\n" +
+	"\x03key\x18\x01 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x121\n" +
+	"\rdisplay_hints\x18\x03 \x03(\tB\f\xbaH\t\x92\x01\x06\"\x04r\x02\x10\x01R\fdisplayHints\"\x95\x02\n" +
+	"\vSpanStarted\x12%\n" +
+	"\btrace_id\x18\x01 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\atraceId\x12#\n" +
+	"\aspan_id\x18\x02 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x06spanId\x12$\n" +
+	"\x0eparent_span_id\x18\x03 \x01(\tR\fparentSpanId\x12\x1e\n" +
+	"\x04name\x18\x04 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x04name\x12A\n" +
 	"\n" +
-	"started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x121\n" +
+	"started_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xc8\x01\x01R\tstartedAt\x121\n" +
 	"\n" +
 	"attributes\x18\x06 \x03(\v2\x11.sap.v1.AttributeR\n" +
-	"attributes\"t\n" +
-	"\vSpanUpdated\x12\x19\n" +
-	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
-	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x121\n" +
+	"attributes\"\x8c\x01\n" +
+	"\vSpanUpdated\x12%\n" +
+	"\btrace_id\x18\x01 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\atraceId\x12#\n" +
+	"\aspan_id\x18\x02 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x06spanId\x121\n" +
 	"\n" +
 	"attributes\x18\x03 \x03(\v2\x11.sap.v1.AttributeR\n" +
-	"attributes\"\xc4\x02\n" +
-	"\tSpanEnded\x12\x19\n" +
-	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
-	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x125\n" +
-	"\bended_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\aendedAt\x12C\n" +
-	"\rterminal_type\x18\x04 \x01(\x0e2\x1e.sap.v1.SpanEnded.TerminalTypeR\fterminalType\x12#\n" +
+	"attributes\"\xee\x02\n" +
+	"\tSpanEnded\x12%\n" +
+	"\btrace_id\x18\x01 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\atraceId\x12#\n" +
+	"\aspan_id\x18\x02 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x06spanId\x12=\n" +
+	"\bended_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xc8\x01\x01R\aendedAt\x12M\n" +
+	"\rterminal_type\x18\x04 \x01(\x0e2\x1e.sap.v1.SpanEnded.TerminalTypeB\b\xbaH\x05\x82\x01\x02\x10\x01R\fterminalType\x12#\n" +
 	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\"b\n" +
 	"\fTerminalType\x12\x1d\n" +
 	"\x19TERMINAL_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16TERMINAL_TYPE_COMPLETE\x10\x01\x12\x17\n" +
-	"\x13TERMINAL_TYPE_ERROR\x10\x02\"\xd5\x02\n" +
-	"\tSpanEvent\x12\x19\n" +
-	"\btrace_id\x18\x01 \x01(\tR\atraceId\x12\x17\n" +
-	"\aspan_id\x18\x02 \x01(\tR\x06spanId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x125\n" +
-	"\bevent_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aeventAt\x121\n" +
+	"\x13TERMINAL_TYPE_ERROR\x10\x02\"\x8b\x03\n" +
+	"\tSpanEvent\x12%\n" +
+	"\btrace_id\x18\x01 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\atraceId\x12#\n" +
+	"\aspan_id\x18\x02 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x06spanId\x12\x1e\n" +
+	"\x04name\x18\x03 \x01(\tB\n" +
+	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\x04name\x12=\n" +
+	"\bevent_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xc8\x01\x01R\aeventAt\x121\n" +
 	"\n" +
 	"attributes\x18\x05 \x03(\v2\x11.sap.v1.AttributeR\n" +
-	"attributes\x126\n" +
-	"\bseverity\x18\x06 \x01(\x0e2\x1a.sap.v1.SpanEvent.SeverityR\bseverity\"^\n" +
+	"attributes\x12@\n" +
+	"\bseverity\x18\x06 \x01(\x0e2\x1a.sap.v1.SpanEvent.SeverityB\b\xbaH\x05\x82\x01\x02\x10\x01R\bseverity\"^\n" +
 	"\bSeverity\x12\x18\n" +
 	"\x14SEVERITY_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rSEVERITY_INFO\x10\x01\x12\x11\n" +
