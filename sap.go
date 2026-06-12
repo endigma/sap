@@ -118,8 +118,12 @@ func (s *Span) SetAttributes(attrs ...*Attribute) {
 type Severity = sapv1.SpanEvent_Severity
 
 const (
-	SeverityInfo  Severity = sapv1.SpanEvent_SEVERITY_INFO
-	SeverityWarn  Severity = sapv1.SpanEvent_SEVERITY_WARN
+	// SeverityInfo marks an event as explicitly informational, distinct on
+	// the wire from the default unspecified severity but rendered the same.
+	SeverityInfo Severity = sapv1.SpanEvent_SEVERITY_INFO
+	// SeverityWarn marks an event the viewers should highlight as a warning.
+	SeverityWarn Severity = sapv1.SpanEvent_SEVERITY_WARN
+	// SeverityError marks an event the viewers should highlight as an error.
 	SeverityError Severity = sapv1.SpanEvent_SEVERITY_ERROR
 )
 
