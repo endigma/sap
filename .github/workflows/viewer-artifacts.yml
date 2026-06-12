@@ -41,9 +41,7 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
+      - uses: jdx/mise-action@v3
 
       - name: Select viewer
         env:

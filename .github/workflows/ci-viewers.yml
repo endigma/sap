@@ -1,61 +1,40 @@
-name: CI
+name: CI (viewers)
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
   pull_request:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
+env:
+  MISE_EXPERIMENTAL: true
+  GOTESTSUM_FORMAT: github-actions
+
 jobs:
-  workspace:
-    name: Build and test (workspace)
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
-          cache-dependency-path: "**/go.sum"
-
-      - name: Build all modules
-        run: |
-          set -euo pipefail
-          for dir in . viewer/sap-tui viewer/sap-web; do
-            go build -C "$dir" ./...
-          done
-
-      - name: Vet all modules
-        run: |
-          set -euo pipefail
-          for dir in . viewer/sap-tui viewer/sap-web; do
-            go vet -C "$dir" ./...
-          done
-
-      # In workspace mode ./... still only matches packages of the
-      # current module, so each module is tested explicitly.
-      - name: Test all modules
-        run: |
-          set -euo pipefail
-          for dir in . viewer/sap-tui viewer/sap-web; do
-            go test -C "$dir" ./...
-          done
+      - uses: jdx/mise-action@v3
+      - run: mise run '//viewer/...:test'
 
   published:
     name: Build viewers against released sap (GOWORK=off)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       GOWORK: "off"
     steps:
       - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
-          cache-dependency-path: "**/go.sum"
+      - uses: jdx/mise-action@v3
 
       # Verifies each viewer module compiles against its released
       # dependencies, the way `go install module@tag` will build it.

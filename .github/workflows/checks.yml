@@ -1,0 +1,40 @@
+name: Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  MISE_EXPERIMENTAL: true
+
+jobs:
+  proto:
+    name: Generated proto code is current
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v3
+      - run: mise run proto
+      - name: Ensure mise proto is a no-op
+        run: git add -A && git diff --cached --exit-code
+
+  format:
+    name: Formatting is current
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v3
+      - run: mise run format
+      - name: Ensure mise format is a no-op
+        run: git add -A && git diff --cached --exit-code
