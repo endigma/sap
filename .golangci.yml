@@ -14,3 +14,7 @@ linters:
     - unconvert
     - usestdlibvars
     - wastedassign
+
+run:
+  # Allow multiple parallel golangci-lint instances running.
+  allow-parallel-runners: true
