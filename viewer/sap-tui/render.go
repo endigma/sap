@@ -253,17 +253,6 @@ func formatDuration(d time.Duration) string {
 	return d.Round(time.Second).String()
 }
 
-func inlineAttrs(attrs []*sapv1.Attribute) string {
-	parts := make([]string, 0, len(attrs))
-	for _, attr := range attrs {
-		if attr == nil {
-			continue
-		}
-		parts = append(parts, fmt.Sprintf("%s=%s", attr.GetKey(), attr.GetValue()))
-	}
-	return strings.Join(parts, " ")
-}
-
 func hasHint(hints []string, want string) bool {
 	for _, hint := range hints {
 		if hint == want {

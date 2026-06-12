@@ -1,3 +1,4 @@
+// The sap-tui command renders a live terminal viewer for sap records.
 package main
 
 import (

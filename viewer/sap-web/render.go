@@ -214,7 +214,7 @@ func eventDOMID(key string) string {
 	return safeCSSIdent(key, "sap-event-unknown")
 }
 
-func spanStyle(span *state.SpanState, depth int) string {
+func spanStyle(depth int) string {
 	return fmt.Sprintf("--span-hue:%d", spanHue(depth))
 }
 

@@ -280,10 +280,3 @@ func (m *model) scheduleRepaint() tea.Cmd {
 		return repaintMsg{}
 	})
 }
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}

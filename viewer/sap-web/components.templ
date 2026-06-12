@@ -506,11 +506,11 @@ templ TimelineAppendPatch(parent *state.SpanState, item state.TimelineItem, dept
 templ SpanCard(span *state.SpanState, depth int, now time.Time, staleOpenSpanIDs map[string]time.Time, oob bool) {
 	if span != nil {
 		if oob {
-			<article id={ spanDOMID(span) } hx-swap-oob="true" class={ spanCard() } data-card-key={ spanCardKey(span) } style={ spanStyle(span, depth) }>
+			<article id={ spanDOMID(span) } hx-swap-oob="true" class={ spanCard() } data-card-key={ spanCardKey(span) } style={ spanStyle(depth) }>
 				@SpanCardContents(span, depth, now, staleOpenSpanIDs)
 			</article>
 		} else {
-			<article id={ spanDOMID(span) } class={ spanCard() } data-card-key={ spanCardKey(span) } style={ spanStyle(span, depth) }>
+			<article id={ spanDOMID(span) } class={ spanCard() } data-card-key={ spanCardKey(span) } style={ spanStyle(depth) }>
 				@SpanCardContents(span, depth, now, staleOpenSpanIDs)
 			</article>
 		}

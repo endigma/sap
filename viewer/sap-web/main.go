@@ -1,3 +1,4 @@
+// The sap-web command serves a live web viewer for sap records.
 package main
 
 import (
@@ -17,6 +18,12 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	addr := flag.String("addr", "127.0.0.1:8090", "HTTP address for the web viewer")
 	url := flag.String("url", "http://127.0.0.1:8080/live", "Sap SSE endpoint URL")
 	maxRoots := flag.Int("roots", 50, "maximum root spans to retain")
@@ -52,6 +59,7 @@ func main() {
 
 	log.Printf("sap web viewer listening on http://%s and reading %s", *addr, *url)
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
