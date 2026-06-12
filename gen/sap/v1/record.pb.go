@@ -1075,12 +1075,17 @@ type SpanEvent struct {
 	xxx_hidden_Name        *string                `protobuf:"bytes,3,opt,name=name"`
 	xxx_hidden_EventAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=event_at,json=eventAt"`
 	xxx_hidden_Attributes  *[]*Attribute          `protobuf:"bytes,5,rep,name=attributes"`
-	xxx_hidden_Severity    SpanEvent_Severity     `protobuf:"varint,6,opt,name=severity,enum=sap.v1.SpanEvent_Severity"`
+	xxx_hidden_Severity    SpanEvent_Severity     `protobuf:"varint,6,opt,name=severity,enum=sap.v1.SpanEvent_Severity,def=1"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
+
+// Default values for SpanEvent fields.
+const (
+	Default_SpanEvent_Severity = SpanEvent_SEVERITY_INFO
+)
 
 func (x *SpanEvent) Reset() {
 	*x = SpanEvent{}
@@ -1159,7 +1164,7 @@ func (x *SpanEvent) GetSeverity() SpanEvent_Severity {
 			return x.xxx_hidden_Severity
 		}
 	}
-	return SpanEvent_SEVERITY_UNSPECIFIED
+	return Default_SpanEvent_Severity
 }
 
 func (x *SpanEvent) SetTraceId(v string) {
@@ -1246,7 +1251,6 @@ func (x *SpanEvent) ClearEventAt() {
 
 func (x *SpanEvent) ClearSeverity() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
-	x.xxx_hidden_Severity = SpanEvent_SEVERITY_UNSPECIFIED
 }
 
 type SpanEvent_builder struct {
@@ -1337,7 +1341,7 @@ const file_sap_v1_record_proto_rawDesc = "" +
 	"\fTerminalType\x12\x1d\n" +
 	"\x19TERMINAL_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16TERMINAL_TYPE_COMPLETE\x10\x01\x12\x17\n" +
-	"\x13TERMINAL_TYPE_ERROR\x10\x02\"\x8b\x03\n" +
+	"\x13TERMINAL_TYPE_ERROR\x10\x02\"\x9a\x03\n" +
 	"\tSpanEvent\x12%\n" +
 	"\btrace_id\x18\x01 \x01(\tB\n" +
 	"\xbaH\a\xc8\x01\x01r\x02\x10\x01R\atraceId\x12#\n" +
@@ -1348,8 +1352,8 @@ const file_sap_v1_record_proto_rawDesc = "" +
 	"\bevent_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampB\x06\xbaH\x03\xc8\x01\x01R\aeventAt\x121\n" +
 	"\n" +
 	"attributes\x18\x05 \x03(\v2\x11.sap.v1.AttributeR\n" +
-	"attributes\x12@\n" +
-	"\bseverity\x18\x06 \x01(\x0e2\x1a.sap.v1.SpanEvent.SeverityB\b\xbaH\x05\x82\x01\x02\x10\x01R\bseverity\"^\n" +
+	"attributes\x12O\n" +
+	"\bseverity\x18\x06 \x01(\x0e2\x1a.sap.v1.SpanEvent.Severity:\rSEVERITY_INFOB\b\xbaH\x05\x82\x01\x02\x10\x01R\bseverity\"^\n" +
 	"\bSeverity\x12\x18\n" +
 	"\x14SEVERITY_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rSEVERITY_INFO\x10\x01\x12\x11\n" +

@@ -324,7 +324,7 @@ func TestAddEvent(t *testing.T) {
 		}
 	})
 
-	t.Run("defaults to unspecified severity", func(t *testing.T) {
+	t.Run("defaults to info severity when none is provided", func(t *testing.T) {
 		span, records := newSpan(t)
 		span.AddEvent("event")
 
@@ -332,8 +332,12 @@ func TestAddEvent(t *testing.T) {
 		if len(got) != 2 {
 			t.Fatalf("got %d records, want 2", len(got))
 		}
-		if severity := got[1].GetSpanEvent().GetSeverity(); severity != sapv1.SpanEvent_SEVERITY_UNSPECIFIED {
-			t.Fatalf("severity = %v, want SEVERITY_UNSPECIFIED", severity)
+		event := got[1].GetSpanEvent()
+		if event.HasSeverity() {
+			t.Fatalf("severity = %v, want unset on the wire", event.GetSeverity())
+		}
+		if severity := event.GetSeverity(); severity != sapv1.SpanEvent_SEVERITY_INFO {
+			t.Fatalf("severity = %v, want default SEVERITY_INFO", severity)
 		}
 	})
 

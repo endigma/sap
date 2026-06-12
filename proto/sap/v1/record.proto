@@ -101,5 +101,8 @@ message SpanEvent {
   ];
   google.protobuf.Timestamp event_at = 4 [(buf.validate.field).required = true];
   repeated Attribute attributes = 5;
-  Severity severity = 6 [(buf.validate.field).enum.defined_only = true];
+  Severity severity = 6 [
+    default = SEVERITY_INFO,
+    (buf.validate.field).enum.defined_only = true
+  ];
 }
