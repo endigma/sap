@@ -1,8 +1,6 @@
 module github.com/endigma/sap/viewer/sap-tui
 
-// go >= 1.26.3 is forced by the released sap v0.1.0 dependency; go mod tidy
-// restores it if lowered, and go.work must list at least this version.
-go 1.26.3
+go 1.26
 
 require (
 	github.com/alecthomas/chroma/v2 v2.20.0
@@ -11,7 +9,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20260608090822-c3ad58c6c9e5
 	github.com/charmbracelet/x/term v0.2.1
-	github.com/endigma/sap v0.1.0
+	github.com/endigma/sap v0.2.0
 	github.com/muesli/termenv v0.16.0
 	google.golang.org/protobuf v1.36.11
 )
