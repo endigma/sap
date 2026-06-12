@@ -2,17 +2,14 @@ edition = "2024";
 
 package sap.v1;
 
-import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/endigma/sap/gen/sap/v1;sapv1";
 
 message Record {
-  google.protobuf.Timestamp emitted_at = 1 [(buf.validate.field).required = true];
+  google.protobuf.Timestamp emitted_at = 1;
 
   oneof kind {
-    option (buf.validate.oneof).required = true;
-
     SpanStarted span_started = 2;
     SpanUpdated span_updated = 3;
     SpanEnded span_ended = 4;
@@ -21,41 +18,23 @@ message Record {
 }
 
 message Attribute {
-  string key = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
+  string key = 1;
   string value = 2;
-  repeated string display_hints = 3 [(buf.validate.field).repeated.items.string.min_len = 1];
+  repeated string display_hints = 3;
 }
 
 message SpanStarted {
-  string trace_id = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  string span_id = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
+  string trace_id = 1;
+  string span_id = 2;
   string parent_span_id = 3;
-  string name = 4 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  google.protobuf.Timestamp started_at = 5 [(buf.validate.field).required = true];
+  string name = 4;
+  google.protobuf.Timestamp started_at = 5;
   repeated Attribute attributes = 6;
 }
 
 message SpanUpdated {
-  string trace_id = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  string span_id = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
+  string trace_id = 1;
+  string span_id = 2;
   repeated Attribute attributes = 3;
 }
 
@@ -66,16 +45,10 @@ message SpanEnded {
     TERMINAL_TYPE_ERROR = 2;
   }
 
-  string trace_id = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  string span_id = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  google.protobuf.Timestamp ended_at = 3 [(buf.validate.field).required = true];
-  TerminalType terminal_type = 4 [(buf.validate.field).enum.defined_only = true];
+  string trace_id = 1;
+  string span_id = 2;
+  google.protobuf.Timestamp ended_at = 3;
+  TerminalType terminal_type = 4;
   string error_message = 5;
 }
 
@@ -87,22 +60,10 @@ message SpanEvent {
     SEVERITY_ERROR = 3;
   }
 
-  string trace_id = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  string span_id = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  string name = 3 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string.min_len = 1
-  ];
-  google.protobuf.Timestamp event_at = 4 [(buf.validate.field).required = true];
+  string trace_id = 1;
+  string span_id = 2;
+  string name = 3;
+  google.protobuf.Timestamp event_at = 4;
   repeated Attribute attributes = 5;
-  Severity severity = 6 [
-    default = SEVERITY_INFO,
-    (buf.validate.field).enum.defined_only = true
-  ];
+  Severity severity = 6 [default = SEVERITY_INFO];
 }
