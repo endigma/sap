@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20260608090822-c3ad58c6c9e5
-	github.com/charmbracelet/x/term v0.2.1
+	github.com/charmbracelet/x/term v0.2.2
 	github.com/endigma/sap v0.2.0
 	github.com/muesli/termenv v0.16.0
 	google.golang.org/protobuf v1.36.11
